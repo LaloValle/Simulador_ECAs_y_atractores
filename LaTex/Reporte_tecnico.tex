@@ -1,0 +1,2312 @@
+\documentclass[]{article}
+\usepackage[top=1.2cm,bottom=1.5cm,left=1.2cm, right=1.2cm,bindingoffset=0.6cm]{geometry}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{lscape}
+% Justificar texto
+\usepackage{ragged2e}
+
+\usepackage{listings}
+\usepackage{color}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=Python,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+% Title Page
+\title{Cálculo de \textit{Elementary Cellular Automaton} y atractores \\\hfill\break Sistemas Complejos}
+\author{Prof: Genaro Juárez Martínez \\ \\ Luis Eduardo Valle Martínez}
+\date{15 de Junio del 2022}
+
+
+\begin{document}
+	\maketitle
+	
+	\section{Introducción}
+		El autómata celular es un modelo discreto que puede crear comportamientos complejos al usarse reglas sencillas. Su construcción se realiza utilizando una grilla, nombrada espacio, con un número finito de estados, que permite la evolución de estos utilizando una regla determinística de evolución.
+		
+		\hfill\break
+		\justifying
+		La parte interesante que ha fascinado a investigadores quienes han liderado investigaciones sobre estos, es la capacidad de desarrollar un comportamiento complejo que es imposible de preveer tan solo analizar la regla que se aplica.
+		
+		\hfill\break
+		\justifying
+		Desarrollado el modelo por Von Neumann en los años 40 mientras trabajaba en la construcción de un systema auto replicatorio, por consejo de su colega Satinslaw Ulam, cambió su método de aproximación utilzando una abstracción matemática, lo que llevó al desarrollo de los autómatas celulares de 2 dimensiones.
+		
+		\hfill\break
+		\justifying
+		Años de investigación en la materia y después de avances en el estudio de los autómatas bidimensionales, se empezó a estudir a los autómatas celulares en su forma más simple reduciendolos a 1 dimensión, cambiando las vecindades posibles de 4 u 8 vecinos a 2, llamándoles comunmente como \textit{Elementary Cellular Automaton}(ECA).
+		
+		\hfill\break
+		\justifying
+		Al igual que sucede con los autómatas bidimensionales, las células tienen 2 estados con la posibilidad de interacción con el par de células vecinas $i-1,i+1$. De estas vecindades nacen las reglas que permiten su evolución, y se definen como una función matemática que asigna a un número de 3 bits un número de 1 bit el cual corresponde al nuevo estado de la célula central.
+		
+		\hfill\break
+		\justifying
+		Dado que existen 8 posibles configuraciones de los vecindarios compuestos de 3 células, existen un total de $2^8=256$ ECAs.
+		
+		\hfill\break
+		\justifying
+		Dado que los ECA definen sus espacio unidimensional como una cinta enlazada en sus extremos, el comportamiento del sistema a través de las generaciones de evolución se consigue utilizando diagramas de espacio tiempo, en el cual la configuración de los estados en la rejilla d dimensional, es graficado como una función del tiempo.
+		
+		\hfill\break
+		\justifying
+		Los ECAs son particularmente interesantes de analizar y estudiar por 2 razones, la primera de ellas es el número limitado de reglas y sus interacciones las vuelve sencillas de estudiar en comparación por ejemplo de los autómatas bidimensionales. El segundo tema de interes, es la naturaleza visual del tiempo permite realizar investigaciones profundas en los patrones cambiantes que se encuentran en sus evoluciones.
+		
+		\hfill\break
+		\justifying
+		Con estas características los ECAs se han convertido en una herramienta para la exploración de la aparición(\textit{emergence}), caos y complejidad en un sistema no lineal.
+		
+		\hfill\break
+		\justifying
+		En este trabajo se plantea la creación de un simulador de ECAs que permita observar gráficamente mediante una animación de una grilla con células, las evoluciones de las vecindades al definirse una regla de evolución. Asi también se proveen demás funcionalidades en una interfaz gráfica que permite cargar configuraciones en un espacio vacio, guardar el espacio de evolución en un archivo, realizar un análisis estadístico de las generaciones con la graficación de la densidad y entropía de Shannon, y finalmente la capacidad de calcular los campos de atracción de una regla específica dado un rango de potencias.
+	
+	\newpage
+	\section{Programa}
+		\subsection{Dependencias}
+			\justifying
+			Lista de dependencias de bibliotecas y programas requeridos para la ejecución del programa.
+			Se utilizó para el desarrollo del simulador el lenguaje de programación Python en su forma vanilla, sin uso de algún \textit{framework}, por lo que mínimamente se requiere la instalación de Python en su verisón 3. El desarrollo se realizó en la versión 3.9.7.
+			
+			\hfill\break
+			\justifying
+			Las bibliotecas listadas a continuación pueden instalarse mediante programas como pip, o directamente en un ambiente virtual como \textit{pipenv} o \textit{anaconda}:
+			\begin{itemize}
+				\item PyGame 2.1.2
+				\item Numpy 1.21.5
+				\item Matplotlib 3.5.1
+				\item Networkx 2.8.3
+				\item igraph 0.9.10
+				\item cairocffi 1.0.0
+			\end{itemize}
+		
+			\hfill \break
+			\justifying
+			\textbf{PyGame} es una biblioteca utilizada para el desarrollo de sencillos juegos 2D en python, incluyendo algunas herramientas gráficas para la impresión en pantalla de diferentes forma geométricas, imágenes y \textit{Sprites}. Incluye métodos usados para la detección de colisiones entre objetos, impresión de áreas en pantalla y otros de configuración como el número de veces de refresco de pantalla en cuadros por segundo FPS(\textit{Frames Per Second}).
+			Incluye así también métodos para la fácil implementación de sonido y archivos de audio, sin embargo este tipo de funciones no se utilizan en el desarrollo de este simulador.
+			
+			\hfill \break
+			\justifying
+			\textbf{Numpy} es un biblioteca para el manejo de vectores y matrices, incluyendo un amplio conjunto de recursos en funciones matemáticas en el dominio del algebra lineal, transformada de fourier y matrices.
+			Principalmente el uso de esta biblioteca en el programa se encuentra en el uso de \textit{arrays} como estructuras para el manejo de espacios y otros recursos auxiliares que permiten de forma sencilla y eficiente las operaciones durante la evolución del espacio de los autómatas.
+			
+			\hfill \break
+			\justifying
+			\textbf{Networkx} es una biblioteca de Python enfocada en el estudio de grafos y redes. Permite la creación, manipulación y estudio de las estructura, dinámicas, y funciones de redes complejas.
+			
+			\hfill \break
+			\justifying
+			\textbf{igraph} es una colección de bibliotecas para la creación y manipulación de grafos y análisis de redes. Escrita en C inicialmente, se han creado paquetes que funcionan en Python y R.
+			
+			\hfill \break
+			\justifying
+			\textbf{cairocffi} es un reemplazo directo basado en CFFI para Pycairo, un conjunto de enlaces de Python y una API orientada a objetos para cairo. Cairo es una biblioteca de gráficos vectoriales 2D con soporte para múltiples backends, incluidos búferes de imágenes, PNG, PostScript, PDF y salida de archivos SVG
+			
+			\hfill \break
+			\justifying
+			La totalidad del proceso de desarrollo y pruebas del funcionamiento de la simulación se realizó utilizando un SO llamado Pop!\_OS en su versión 21.10, sistema basado en UNIX Linux derivado de la popular distribución Debian.
+			
+			\hfill \break
+			\justifying
+			La ejecución del programa en otro sistema operativo diferente a una distribución Linux no debería ser impedida si se cuenta con la instalación de todas las dependencias, ya sea en un ambiente virtual o el espacio de trabajo de usuario directamente.
+			
+		\newpage
+		\subsection{Requerimientos}
+			\hfill\break
+			\justifying
+			El programa construido consiste en un simulador gráfico de un espacio de evoución para una cierta configuración de Autómatas Celulares Elementales en  una única dimensión, basado en el trabajo desarrollado por Stephen Wolfram. 
+			La evolución de los autómatas se basa en los valores de una vecindad que considera 3 células en la misma fila de evolución, dependiendo de la configuración de estas 3 células la siguiente generación en la célula central está dada por el valor del bit en la posición representada por la configuración de la vecindad sobre la cadena binaria de la regla especificada por el usuario.
+			Al utilizarse una vecindad de 3 reglas el número de configuraciones es igual a 8, así directamente se puede hacer una relación de cada regla con 1 bit en un byte, al asignarsele un valor a la regla entonces el estado del bit para cada configuración(0 o 1) será el valor de la célula central en la siguiente evolución(Muerta o Viva).
+			
+			\hfill \break
+			Para facilitar el uso del simulador y precisamente poder observar la evolución de una manera intuitiva en forma de animación, el programa requirió de una implementación gráfica, aprovechandose esta cualidad para incluir botones o diferentes componenetes que permitan al usuario configurar los parámetros y condiciones en el que tendrá lugar el proceso de evolución para la configuración del espacio.
+			
+			\hfill \break
+			A continuación se numeran los requerimientos funcionales con las que el programa debe cumplir:
+			\begin{itemize}
+				\item Ingresar las potenciales 256 reglas de evolución por el usuario.
+				\item Evaluar espacios de hasta 1000x1000 células. Alternativamente si no es posible mostrar en una sola pantalla la totalidad del espacio implementar un scroll de pantalla.
+				\item Proporcionar el cambio de colores en las células según su estado.
+				\item Poder inicializar el espacio de evoluciones con diferentes densidades. Alternativamente el uso de archivos para una configuración inicial o modificando manualmente el espacio de evolución.
+				\item Agregar la funcionalidad de guardado y levantado de archivos con configuraciones previamente calculadas.
+				\item Habilitar la graficación de la densidad por generación, graficación del logaritmo de la densidad por generación y finalmente la entropía del espacio de evolución por generación.
+				\item Calcular los atractores resultantes en una configuración utilizando un conjunto de universos binarios potencia especificados como un rango por parte del usuario, para una regla de evolución.
+			\end{itemize}
+
+		\subsection{Interfaz}
+			\justifying
+			La biblioteca gráfica principal para la construcción de la GUI del simulador fue \textit{PyGame}.
+			
+			\justifying
+			Las herramientas que provee tal biblioteca son insuficientes y en muchos de los casos para típicos elementos gráficos de una GUI(botones, \textit{sliders}, campos de texto, etc), son inexistentes. Por esta razón se considera un biblioteca de bajo nivel, y que dentro de sus capacidades se enfoca en facilitar tan solo algunas implementaciones más relacionadas con elementos gráficos y funcionales de sencillos juegos en 2D, que como una biblioteca para el desarrollo de interfaces.
+			
+			\justifying
+			Debido a la naturaleza de la biblioteca se presentó como un reto la construcción de la interfaz, explicandose posteriormente el enfoque abordado para solucionar estas limitaciones, codificando los componentes gráficos desde 0 y en un ambiente de manejo de posicionamiento por coordenadas de pixeles con algunas figuras geométricas básicas como círculos o rectángulos.
+			
+			\justifying
+			Habiendose creado e implementado los elementos básicos gráficos para una GUI, junto con otras implementaciones de organización y posicionamiento gráfico(\textit{layouts}), la interfaz final es como la siguiente(Figura \ref{GUI})
+			
+			\begin{figure}[!h]
+				\centering
+				\includegraphics[width=18cm]{Imagenes/GUI.png}
+				\label{GUI}
+				\caption{Captura de pantalla de la interfaz gráfica del simulador al ejecutarse}
+			\end{figure}
+			
+			\subsubsection{Componenetes Gráficos}
+				\justifying
+				Todos los componenetes gráficos que se describen pertenecen al módulo de la aplicación nombrado \textit{GraphicalComponents} y que puede verse su implementación Python en la sección de \textbf{Código Fuente}.
+				
+				\paragraph{Botón}
+				Los botones son componentes gráficos básicos en cualquier GUI, y no es excepción en el programa de simulación pues se utilizan un total de 12 botones y que permiten desempeñar diferentes acciones.
+				
+				\hfill \break
+				\justifying
+				La primer triada de botones son los utilizados para Pausar, Correr y Cargar una nueva configuración de la simulación. Ubicados en la parte superior derecha en la sección lateral, son de los botones más importantes que ejecutan las funciones básicas de la evolución.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=5cm]{Imagenes/botones_correr.png}
+					\caption{Botones que dictan el flujo de las evoluciones del espacio}
+					\label{Evolution_buttons}
+				\end{figure}
+				
+				\hfill\break
+				\justifying
+				Ubicados también en la sección laterial en su parte superior, se encuentra el par de botones que permiten elegir una configuración inicial. El primero de ellos coloca una única célula viva justo en el medio del espacio de evolución en la fila inicial.
+				El segundo de ellos, respresentado por un dado, inicializa la primer generación con un número dependiente de la densidad específicada con el slider de células vivas y muertas con una configuración aleatoria.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[height=3cm]{Imagenes/configuraciones_iniciales.png}
+					\caption{Permiten rápidamente colocar una configuración inicial para la evolución del simulador}
+					\label{Config_buttons}
+				\end{figure}
+				
+				
+				\hfill \break
+				\justifying
+				Siguiendo en importancia ubicados en la parte inferior de la sección lateral se ubican los 3 botones de acciones relacionadas al espacio gráfico de evolución. El primero de ellos representado por un ícono de una flecha es el botón \textit{Charge} y permite cargar una configuración en un archivo CSV. Le sigue el botón con ícono de disquet \textit{Load}, que permite guardar la actual configuración del espacio de evolución. Finalmente se tiene un ícono de goma de borrar \textit{Clear}, que limpia el espacio de evolución colocando el espacio con todas las células muertas.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=5cm]{Imagenes/botones_inferiores.png}
+					\caption{Botones inferiores para la configuración del estado de evolución}
+					\label{Space_configuration_buttons}
+				\end{figure}
+				
+				\hfill \break
+				\justifying
+				Finalmente ubicadas en la sección de \textit{Plotting}, se tienen 3 botones que se encargan de la graficación.
+				El primero de ellos con un ícono de cubo corresponde a la gráfica de Densidad para las generaciones corridas. Le sigue un botón con ícono de una gráfica logarítmica, y que precisamente grafica el logaritmo de las densidades. Finalmente se tiene el ícono con unas partículas de un gas para la graficación de la Entropía.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=5cm]{Imagenes/botones_plots.png}
+					\caption{Botones con íconos para la graficación de la complejidad de los estados evolucionados}
+					\label{Botones_graficacion}
+				\end{figure}
+				
+				\paragraph{Texto}
+				\justifying
+				Se utilizan algunos textos para indicar el estado actual del espacio de evolución, siendo los 3 más importantes aquellos impresos en la barra inferior, y que respectivamente indican: El número de generaciones que han transcurrido, El tamaño del espacio y entre paréntesis el número de pantalla actual(pantallas mostradas por el scroll), y finalmente el número de células en el espacio que se encuentran vivas.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=12cm]{Imagenes/textos_seccion_inferior.png}
+					\caption{Textos ubicados en la barra inferior. Con el proposito de mostrarlos los 3 la imagen se ha recortado para ubicarlos juntos, sin embargo en la interfaz se muestran en las esquinas y el centro de la ventana en la parte inferior}
+				\end{figure}
+				
+				\paragraph{Slider}
+				\justifying
+				Un slider es un componente gráfico algo más complejo que va a estar formado por una combinación de los 2 elementos anteriores así como un par de rectángulos y círculos que le dan forma al cuerpo de la ranura por la que el botón se desliza.
+				
+				\hfill\break
+				\justifying
+				La función de este slider es la elección del complemento de la densidad, y que es aplicado cuando se da al botón Reset que carga una nueva configuración de espacio de evolución con un número aleatorio de células vivas que se rigen por el complemento de la probabilidad que se escoge con el slider.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=8cm]{Imagenes/slider.png}
+					\caption{Slider para elegir la probabilidad de las células muertas cuando se realiza un Reset}
+					\label{Slider}
+				\end{figure}
+				
+				\paragraph{Input}
+				\justifying
+				El input es un elemento típicamente utilizado en formularios para el ingreso de texto corto. El input cuenta con una \textit{Label} etiqueta que sirve al usuario para indicar el tipo de respuesta que se debe colocar ahí, asi como del cuerpo del input y el texto por supuesto.
+				
+				\hfill\break
+				\justifying
+				La especificación de la regla de evolución por parte del usuario se implementa como un input en el que se ingresa el número de la regla.
+				Típicamente el valor del input por defecto será 110(regla de especial interés en los ECAs)
+				
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=7cm]{Imagenes/regla.png}
+					\caption{Input utilizado para el ingreso de la regla de evolución}
+					\label{Rule}
+				\end{figure}
+				
+				\hfill\break
+				\justifying
+				Un uso poco convecional pero conveniente, es la implementación de un par de inputs en forma de una clase de botones que permiten el cambio de los colores para las células vivas o muertas.
+				
+				\hfill\break
+				\justifying
+				Se opto por utilizarse estos elementos por el texto de etiqueta que por defecto se coloca en el input, colocándose un texto vacio e ignorando eventos de tecla que los pueda modificar, siendo únicamente el click el que desencadene la función para el cambio de color.
+				
+				\hfill\break
+				\justifying
+				Los colores disponibles pueden consultarse en el módulo \textit{Constants} en la sección \textbf{Código Fuente}.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=7cm]{Imagenes/colores.png}
+					\caption{Par de inputs ubicados en la sección \textit{Colors} y que permiten modificar el color actual de las células vivas y muertas}
+					\label{Colores_celulas}
+				\end{figure}
+				
+				\hfill\break
+				\justifying
+				Finalmente, pero no menos importante, el uso conjunto de inputs y botones en la interfaz se encuentra en la sección \textit{Attractors}. A través del par de inputs se indica el rango de potencias del universo binario con las que se ejecutará el proceso de cálculo de los atractores.
+				
+				\hfill\break
+				\justifying
+				Por último el botón ubicado en la parte izquierda se presiona para empezar el proceso de cálculo, mostrandose inmediatamente los árboles de forma gráfica en el espacio de evolución y graficados como imágenes en la carpeta \textit{graphs}.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=7cm]{Imagenes/atractores.png}
+					\caption{Botón e inputs utilizados para la ejecución del proceso de cálculo de los atractores de una regla}
+					\label{Attractors}
+				\end{figure}
+				
+				
+				
+				\paragraph{Células Gráficas}
+				\justifying
+				Este componenete gráfico es el único que no se encuentra en el módulo \textit{GraphicalComponents} pues se encuentra declarado en el módulo \textit{Graphics}, esto se debe a que a diferencia de los elementos anteriores las células no son componentes comúnes en una biblioteca GUI de propósito general, siendo particulares de esta aplicación de simulación.
+				
+				\hfill\break
+				\justifying
+				Las células gráficas son en escencia un \textit{sprite} en forma de rectángulo que cambiará su color en los diferentes casos en función de si esa célula se encuentra viva o muerta:
+				\begin{itemize}
+					\item Se presiona o pasa encima el cursor mientras se mantiene presionado el click para cambiar el estado de la célula y por lo tanto su color.
+					\item Durante el proceso de evolución la célula cambia su estado
+					\item De forma general todas las células cambian a muertas cuando se da un \textit{Clear}.
+					\item Dependiendo de la configuración inicial aleatoria algunas células pueden cambiar su color pues se han definido como células vivas.
+				\end{itemize}
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=4cm]{Imagenes/celulas_graficas.png}
+					\caption{Fragmento de células gráficas en el espacio de evolución}
+				\end{figure}
+				
+				
+				\paragraph{Section}
+				\justifying
+				Componente con representación gráfica en forma de una franja que contiene un encabezado con el título de la sección.
+				
+				\hfill\break
+				\justifying
+				Este recurso se utiliza para realizar la separación visual de los botones de graficación y los colores de las células, pero también se utiliza como referencia para colocar los elementos gráficos clasificados dentro de esa sección.
+			
+			\subsubsection{Layouts}
+				\justifying
+				Como se explicó previamente, el posicionamiento de los elementos en la ventana se realiza a nivel coordenadas de pixel, por lo que para algunos casos como la colocación de las células gráficas o las secciones y barras laterales e inferior, se utilizan componentes de \textit{layout} u organización, que pueden o no tener alguna representación gráfica.
+				
+				\hfill\break
+				\justifying
+				Estos objetos pueden encontrarse en el módulo \textit{Layouts}
+				
+				\paragraph{SideBar}
+				\justifying
+				Componente \textit{singleton}, instanciado 1 sola vez en la ventana, que tiene representación gráfica como un rectángulo en la parte lateral derecha de la ventana.
+				
+				\hfill\break
+				\justifying
+				Semánticamente separa a la sección del espacio de evolución para albergar en su interior los diferentes componentes que controlan la evolución del simulador.
+				
+				\paragraph{BottomBar}
+				\justifying
+				Componente \textit{singleton}, instanciado 1 sola vez en la ventana, que tiene representación gráfica como un rectángulo en la parte inferior de la ventana.
+				
+				\hfill\break
+				\justifying
+				Semánticamente separa a la sección del espacio de evolución y la barra lateral, para albergar en su interior los textos que indican el estado de la evolución así como el tamaño y zoom.
+				
+				\paragraph{Grid}
+				\justifying
+				Componente sin representación gráfica que fue desarrollado para mimetizar el comportamiento de este tipo de organización gráfica en forma tabular.
+				
+				\hfill\break
+				\justifying
+				Este objeto se encarga de calcular el tamaño de sus elementos según las medidas proporcionadas para ocupar todo el grid, y los paddings entre cada elemento.
+				
+				\hfill\break
+				\justifying
+				Se le pasa una lista de los Rectángulos de los elementos gráficos para que según la disposición calculada automáticamente se coloquen los elementos en su respectiva posición, conformando finalmente el grid completo con las dimensiones y número de filas y columnas indicadas.
+
+		\newpage
+		\subsection{Espacio de evolución}
+			\justifying
+			Dos espacios de evolución se ocupan para la construcción del programa simulador. El primero de ellos representante del espacio gráfico, es visible en un arreglo tipo \textit{grid} y se conforma de los componentes gráficos nombrados como \textbf{Células Graficas} en el contexto del programa.
+			
+			\hfill\break
+			\justifying
+			En este espacio de evolución el usuario puede desarrollar directamente tan solo la configuración manual del estado de cada célula, acotándose esta función únicamente a la fila que corresponde a la generación actual, filas previas y posteriores son imposibles de modificar.
+			
+			\hfill\break
+			\justifying
+			Manteniendo una estrecha relación de correspondencia se tiene un segundo espacio de evolución, este espacio como recurso lógico de las células, se implementa para esta solución como un espacio de tamaño $(NUMBER_CELLS_1D + 2) \times 2$.
+			La primer fila del espacio se corresponde a la configuración actual de la fila que muestra la última generación calculada, mientras que la segunda se utiliza para guardar la configuración mientras se realiza el cálculo, de la siguiente generación tras la evolución. Una vez este cálculo se realizó el valor de la segunda fila pasa a la primera y se limpia esta última hilera.
+			
+			\hfill\break
+			\justifying
+			Es importante notar que la dimensión del espacio lógico tiene añadido un par de columnas, las cuales se implementan como un padding que permite replicar el mecanismo de una cinta enlazada, y que es sumamente útil cuando se particionan las vecindades para el cálculo de la nueva generación.
+			
+			\hfill\break
+			\justifying
+			Complementario a este par de espacios, se cuenta con uno más especificado como un arreglo numpy utilizado para guardar los valores de las generaciones anteriores.
+			
+			\subsubsection{Configuración del espacio de evolución}
+			\justifying
+			En el archivo Python nombrado como \textit{main.py} se tienen un conjunto de constantes de configuración que pueden ser modificadas para cambiar los aspectos gráficos y lógicos de la simulación, no siendo la excepción el espacio de evolución donde los valores de las siguientes constantes influyen en su construcción:
+			\begin{itemize}	
+				\item \textbf{GRID\_WIDTH}: Especifica el tamaño en pixeles del ancho del grid en el que se acomodan las células gráficas. Es importante que este valor sea al menos igual al \textbf{NUMBER\_CELLS\_1D} para tener células de 1px, de otra forma se da un error pues no se pueden crear células gráficas con tamaño menor al pixel.
+				
+				\item \textbf{GRID\_PADDING}: En el aspecto gráfico, esta constante se modifica para añadir espaciado entre célula y célula en el grid
+				
+				\item \textbf{NUMBER\_CELLS\_1D}: Indica el número de células que se tendrá por generación. Gráficamente se traduce en el número de columnas por cada fila.
+				
+				\item \textbf{NUMBER\_EVOLUTIONS\_GRID}: Indica el número de generaciones que se mostrarán gráficamente en una sola pantalla, que es lo mismo al número de filas para el espacio de evolución.
+			
+			\end{itemize}
+			
+			\subsubsection{Configuración única célula central}
+			\justifying
+			Particular a los ECAs, la evaluación de un espacio de evolución se realiza con una única célula viva en el centro de las columnas disponibles. Esta configuración de célula solitaria permite identificar correctamente el proceso de evolución así como los patrones que genera cada una de las reglas.
+			
+			\hfill\break
+			\justifying
+			Por esta razón se consideró e integró a la simulación esta opción como la primera de las 3 existentes.
+			
+			\subsubsection{Configuración aleatoria inicial}
+				\justifying
+				La configuración aleatoria inicial consiste en definir una configuración nueva en el espacio de evolución de la primer fila, basándose en la probabilidad de densidad para que el nuevo estado de la célula sea viva. Esta probabilidad de densidad es configurable directamente utilizando el \textit{slider} gráfico(Figura \ref{Slider}), iniciando en primera instancia inmediatamente después de correr la simulación en 50\% para ambos estados.
+				
+				\hfill\break
+				\justifying	
+				Si se desea cargar una nueva configuración aleatoria inicial, aún después de haber iniciado un proceso de evolución, se puede dar click al botón de reset(Figura \ref{Evolution_buttons}).
+			
+			\subsubsection{Configuraciones personalizadas}
+				\justifying
+				También es posible configurar de manera particular la configuración de inicio, así como la configuración de cada una de las células correspondientes a las células en la fila de la generación actual.
+				
+				\hfill\break
+				\justifying
+				La mecánica se ha explicado anteriormente, pero consiste en con el mouse dar click o arrastrar, sobre las células para cambiar su estado. Si estas se encuentran vivas al colapsar con el puntero cambiarán a muertas, sucediendo también para cuando se encuentran muertas y renacen.
+				
+				\hfill\break
+				\justifying
+				Aún cuando se integra esta mecánica al simulador, no resulta como una herramienta de gran utilidad como si sucedia en el simulador bidimensional, donde era primordial para la creación de configuraciones con estructuras definidas, y de esta forma evaluar su comportamiento.
+				En este caso al tratarse de 1 sola dimensión, el comportamiento se evalua con generaciones que van respecto al tiempo, por lo que los colapsos o demás mecánicas plenamente apreciables en el tipo Juego de la Vida, suelen requerir aproximaciones distintas a las planteadas en el simulador anterior.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=5cm]{Imagenes/config_personalizada.png}
+					\caption{Ejemplo de una configuración personalizada en un espacio de 13x13 con una cuenta ascendente en la primer fila para la configuración inicial}
+					\label{Configuracion_personalizada}
+				\end{figure}
+			
+			\subsubsection{Limpiar, Guardar o Cargar espacio de evolución}
+				\justifying
+				Controlado por la triada de botones en la parte inferior derecha(Figura \ref{Space_configuration_buttons}), permite a la simulación limpiar completamente el espacio de evolución cambiando el estado de todas las células a 'Muertas' en ambos espacios(gráfico y lógico) y colocando en 0's el valor de las generaciones y células vivas.
+				
+				\hfill\break
+				\justifying
+				El par de botones restantes son el complemento el uno del otro de una acción. La acción de guardar el espacio de evolución va a generar un nuevo archivo con extensión CSV guardándose en la carpeta \textit{saves}. Este archivo nuevo representa en 0's y 1's el estado del espacio de evolución actual, razón por la cual si se cuenta con un archivo con estas características se puede cargar de vuelta en una simulación.
+				
+				\hfill\break
+				\justifying
+				El proceso de cargado de un espacio guardado requiere que dentro de la carpeta \textit{saves} se tenga el archivo con la configuración deseada renombrado a \textit{upload.csv}, siendo imposible por el momento la elección específica de otro archivo e incluso generando un error si se acciona el botón de \textit{Upload} sin existir este archivo en la carpeta. Este proceso permite cargar configuraciones de espacios de evolución iguales o más pequeños que el espacio actual, centrándose la configuración cargada con respecto columnas pero colocándose siempre desde la fila inicial cuando se trata con configuraciones más pequeñas que el actual espacio de evolución(Figura \ref{Centrado_configuracion_cargada}).
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=17cm]{Imagenes/configuracion_cargada.png}
+					\caption{Ejemplo del centrado de una configuración de tamaño 100x32 cargada en un espacio de evolución 150x80}
+					\label{Centrado_configuracion_cargada}
+				\end{figure}
+
+			\newpage
+			\subsubsection{Cambio de colores}
+				\justifying
+				La simulación permite cambiar los colores de las células gráficas de ambos estados, contando para esto de un par de componentes gráficos(Figura \ref{Colores_celulas}) a los cuales al dar un click sobre estos cambiará su color, tanto el recuadro del input como el grid de las células gráficas que actualmente tengan el estado modificado, por el siguiente en la lista llamada \textit{COLORS\_LIST} en el módulo \textit{Constant}. Esta lista no es más que un conjunto de 13 tuplas con 3 elementos cada una, representando cada tupla un color en formato RGB.
+				
+				\hfill\break
+				\justifying
+				Por el momento el cambio de colores solo se logra de esta forma por lo que no es posible asignar un color específico no identificado en el módulo, sin embargo esta cantidad de colores generan una buena cantidad de combinaciones suficientes para un programa simulador de este tipo.
+				
+				\hfill\break
+				\justifying
+				Ejemplos del cambio de colores se notan en las figuras: \ref{Evolucion_1},\ref{Evolucion_2},\ref{Evolucion_3} y \ref{Evolucion_4}
+				
+				
+			\newpage
+			\subsubsection{Proceso de evolución}
+				\justifying
+				La función para el cálculo de la siguiente generación se encuentra en el módulo \textit{ECA} de la sección \textit{Código Fuente}.
+				
+				\hfill\break
+				\justifying
+				El proceso del cálculo de una nueva generación consiste en la identificación de la configuración de una vecindad compuesta por 3 células. Tomando a una célula viva como 1 y a una célula muerta como 0, se puede tomar como una cadena binaria de 3 bits y que su valor decimal será el número del bit en la cadena binaria de la regla, del que tomará valor la célula úbicada en la columna central(columna de la 2da célula) de estas 3 en la siguiente generación.
+				
+				\hfill\break
+				\justifying
+				En comparación con su contraparte bidimensional, los recursos requeridos para el cálculo de una siguiente generación suele ser mucho más económico, permitiendo trabajar de forma fluida y con espacios de evolución grandes sin la necesidad de implementar un mecanismo de computación paralela como sucede con la programación CUDA.
+				
+				\hfill\break
+				\justifying
+				Esta función es el primero de los algoritmo más relevante en toda la simulación, y que requiere de un par de recursos para ser calculada:
+				\begin{itemize}
+					\item Espacio de anillo: Este recurso describe el comportamiento del espacio de evolución durante el cálculo de una nueva generación, en el que al igual que un anillo, enlaza los extremos de la fila del espacio. Su integración permite asegurar la existencia de vecindades completas en cada una de las células, siendo especificamente beneficiadas las células que existen en los extremos de las filas\\ Existen algunas alternativas para lograr este comportamiento, más la solución utilizada en este trabajo fue la adición de un \textit{padding} en las filas como un par de elementos extras en los extremos del \textit{array} de evolución, y sobre los cuales se replican los valores de los extremos contrarios.
+					
+					\item Regla de evolución: Se define como un número entero entre el rango de $[0,255]$. La elección de este rango se debe al número de combinaciones distintas posibles para una cadena binaria de 8 bits, longitud originada del número de todas las posibles configuraciones de vecindad de 3.
+				\end{itemize}
+				
+				\hfill\break
+				\justifying
+				Este proceso se lleva a cabo en una función que itera sobre las columnas del \textit{array} de evolución, no tomando en cuenta la longitud total con los paddings, pero si considerándolos por las razones expuestas anteriormente.
+				
+				\hfill\break
+				\justifying
+				Se conforman vecindades creando ventanas de células con tamaño 3 y se procede aplicar el algoritmo mencionado anteriormente. Convirtiendo la vecindad a una cadena binaria de tamaño 3, se transforma a su correspondiente valor decimal, y de esta forma se obtiene el índice(número de bit) de la cadena binaria que describe a la regla que previamente ingresó el usuario como un número decimal.
+				
+				\hfill\break
+				\justifying
+				Tomando como ejemplo la regla 30, las configuraciones de vecindad que en su siguiente generación tendrán un predecesor son: \textit{'100','011','010','001'}. Esto es sencillo de visualizar cuando identificamos que los bits número 4,3,2 y 1, se encuentran activos en la representación binaria del número 30.
+				
+				\hfill\break
+				\justifying
+				Los nuevos valores de célula correspondientes a la nueva generación son almacenados temporalmente en la segunda fila del \textit{array} de evolución, esperando a remplazar en la primer fila a los valores anteriores tan pronto termine de recorrerse todas las vecindades en la banda.
+				Los valores que anteriormente conformaban la primer fila del \textit{array} de evolución, ahora serán almacenados en el arreglo del historial del espacio de evolución. Asi mismo este cambio de nueva generación realizará una impresión cambiando los estados de las células gráficas en la última fila sin haber evolucionado antes, respetando la integridad entre valores de los espacios gráficos y lógicos.
+				
+				\begin{landscape}
+					
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					
+						\begin{figure}[!h]
+							\centering
+							\includegraphics[width=25cm]{Imagenes/evolucion_300x150.png}
+							\caption{Evolución con regla 62 desde una configuración con célula central para un espacio de tamaño 300 $\times$ 150 y con colores amarillo(vivas) y negros(muertas)}
+							\label{Evolucion_1}
+						\end{figure}
+				
+					\newpage
+					
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					
+						\begin{figure}[!h]
+							\centering
+							\includegraphics[width=25cm]{Imagenes/evolucion_500x250.png}
+							\caption{Evolución con regla 57 desde una configuración con célula central para un espacio de tamaño 500 $\times$ 250 y con colores negro(vivas) y blanco(muertas)}
+							\label{Evolucion_2}
+						\end{figure}
+				
+					\newpage
+		
+					\hfill\break
+					\hfill\break
+					\hfill\break
+					
+						\begin{figure}[!h]
+						\centering
+						\includegraphics[width=25cm]{Imagenes/evolucion_700x400.png}
+						\caption{Evolución con regla 73 desde una configuración con célula central para un espacio de tamaño 700 $\times$ 400 y con colores azul(vivas) y negro(muertas)}
+						\label{Evolucion_3}
+						\end{figure}
+					
+					\newpage
+						\begin{figure}[!h]
+						\centering
+						\includegraphics[width=25cm]{Imagenes/evolucion_1000x900.png}
+						\caption{Evolución con regla 30 desde una configuración con célula central para un espacio de tamaño 1000 $\times$ 900 y con colores rojo(vivas) y negro(muertas)}
+						\label{Evolucion_4}
+						\end{figure}
+					
+				\end{landscape}
+			
+			\subsubsection{Scrolling}
+				\justifying
+				Considerando la experiencia adquirida depués del desarrollo del primer simulador en un ambiente bidimensional, se prestó especial atención en mejorar el desempeño del simulador para correr espacios de evolución mucho mayores.
+				
+				\hfill\break
+				\justifying
+				Con las consideraciones tomadas para este simulador, y también gracias al disminuido gaste de recursos computacionales por tratarse de 1 dimensión, este programa es capaz de correr espacios mayores al mínimo requerido de 1000x1000, y más sin embargo en la gran mayoría de monitores esto es poco viable pues aún con células de 1px por 1px, los demás elementos gráficos como la barra inferior y la barra de la ventana definida por el sistema acortan el área visible de la ventana.
+				
+				\hfill\break
+				\justifying
+				Una enfoque que se tomo para solucionar el problema de espacios de evolución pequeños fue la implementación de un \textit{scroll} vertical. Esta mecánica permite al usuario calcular potencialmente infinitas generaciones de evolución, realizando el cambio automático entre pantallas cuando una configuración alcanza la última fila de generación visible para mostrar una siguiente pantalla limpia donde seguira evolucionando sin contratiempo(Figura \ref{Scroll}).
+				
+				\hfill\break
+				\justifying
+				Para navegar entre pantallas basta con utilizar la rueda del mouse girando hacia arriba para una pantalla anterior, o hacia abajo para una pantalla posterior. En el caso de computadoras portátiles, gestos hacia cada dirección vertical con 2 dedos sirve como sucedáneo a la carencia de un tercer botón.
+				
+				\newpage
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=8.5cm]{Imagenes/scroll.png}
+					\caption{Se muestra de forma continua un par de pantallas resultantes de la evolución de una configuración inicial de célula central con regla 169 durante un total de 99 generaciones en la primer pantalla y finalmente 194 alcanzadas en la segunda.\\Notar en la imagen de la segunda pantalla el cambio en el texto central a "\textit{space 2}", indicando el número de pantalla que se muestra.}
+					\label{Scroll}
+				\end{figure}
+			\newpage
+			
+		\newpage
+		\subsection{Graficación}
+			\justifying
+			Parte de un análisis estadístico de los espacios de evolución, se tiene la graficación de parámetros que ayuden a describir de alguna u otra forma al espacio de evolución, y en más específico la generación actual.
+			
+			\hfill\break
+			\justifying	
+			Se habilita en la simulación la graficación de 3 parámetros mediante el uso de 3 botones en su respectiva sección(Figura \ref{Botones_graficacion})
+		
+			\subsubsection{Densidad}
+				\justifying
+				El primero de los botones disponibles, permite graficar cuando presionado el número de células vivas(densidad) en todas las generaciones evolucionadas hasta el momento.
+				
+				\hfill\break
+				\justifying
+				Su implementación es bastante sencilla. Haciendo uso de una lista, se agregan a esta el número de células nuevas al terminarse el cálculo de la nueva generación del espacio de evolución, y utilizando estos valores se pasan como argumentos para la graficación ocupando la biblioteca matplotlib.
+				
+				\begin{table}[!h]
+					\centering
+					\begin{tabular}{c c}
+						\includegraphics[width=9cm]{Imagenes/densidad_30.png} & \includegraphics[width=9cm]{Imagenes/densidad_54.png} \\
+						\includegraphics[width=9cm]{Imagenes/densidad_90.png} & \includegraphics[width=9cm]{Imagenes/densidad_110.png} 
+					\end{tabular}
+					\caption{Gráficas de densidad después de 900 generaciones para diferentes reglas de evolución en un mismo tamaño de espacio de evolución(1000x900) y con una única célula central como configuración de inicio.\\ Reglas de evolución aplicadas de izquierda a derecha y arriba hacia abajo: a) 30, b) 54, c) 90, d) 110}
+				\end{table}
+				
+			\subsubsection{Logaritmo Densidad}
+				\justifying
+				Mismo funcionamiento y parámetro que la gráfica de densidad, con la única particularidad de graficarse después de aplicarse el logaritmo a la lista de valores: $log_{10}(Densidad)$
+				
+				\begin{table}[!h]
+					\centering
+					\begin{tabular}{c c}
+						\includegraphics[width=9cm]{Imagenes/densidad_logaritmo_30.png} & \includegraphics[width=9cm]{Imagenes/densidad_logaritmo_54.png} \\
+						\includegraphics[width=9cm]{Imagenes/densidad_logaritmo_90.png} & \includegraphics[width=9cm]{Imagenes/densidad_logaritmo_110.png} 
+					\end{tabular}
+					\caption{Gráficas del logaritmo de la densidad después de 900 generaciones para diferentes reglas de evolución en un mismo tamaño de espacio de evolución(1000x900) y con una única célula central como configuración de inicio.\\ Reglas de evolución aplicadas de izquierda a derecha y arriba hacia abajo: a) 30, b) 54, c) 90, d) 110}
+				\end{table}
+			
+			\subsubsection{Entropía}
+				\justifying
+				La entropía de Shannon en el ámbito de la teoría de información, se trata de una cantidad que indica le incertidumbre de una fuente de información, también pudiendo interpretarse como la cantidad de información promedio que contienen los símbolos utilizados. Los símbolos con menor probabilidad de aparición serán los que aporten mayor información a la medida, de forma que llegan aumentar o disminuir el valor de esta.
+				
+				\hfill\break
+				\justifying
+				Cuando se tenga una distribución homogenea de los símbolos existentes(cada símbolo diferente tendrá la misma probabilidad), entonces la entropía toma el valor de 1, mientras más símbolos diferentes en distribución heterogenea existan en un conjunto, más alejado el valor de la entropía se encontrará del 1.
+				
+				\hfill\break
+				\justifying
+				Partiendo del predicado "La entropía mide la cantidad de certidumbre en la incertidumbre", resulta natural asociar la certidumbre de algo que pase con la probabilidad \textit{P}, entonces la incertidumbre debe ser el inverso de la Probabilidad $\frac{1}{P}$. La multiplicación de los dos términos satisface el predicado, sin embargo si se implementara de esta forma, obtendríamos que cuando un símbolo tiene probabilidad 1 la medida de incertidumbre sería igualmente 1, pero lo correcto sería que este fuera 0 pues estamos completamente seguros que cualquier símbolo escogido siempre será el mismo, por esta razón se implementa el logaritmo:
+				
+				$$
+				H = \sum p(x) log\left(\frac{1}{p(x)}\right)
+				$$
+				
+				Aplicando propiedades de logaritmos:
+				$$
+				H = \sum p(x)( log(1) - log(p(x)) ) = \sum(p(x)(0) - p(x)log(p(x)))
+				$$
+				Resultando finalmente en la ecuación planteada por Claude Shannon en 1948:
+				$$
+				H = -\sum p(x) log(p(x))
+				$$
+				
+				\hfill\break
+				\justifying
+				A partir de esta ecuación lo que se quiere implementar para su graficación en la simulación, es calcular el desorden o deferencias en las vecindades existentes en un espacio de evolución después de calcular su nueva generación. Para esto primero se requiere contabilizar la frecuencia de aparación de cada tipo de vecindad en el espacio, la solución utilizada para esta contabilización fue la de asignar un número único a cada tipo de vecindad, y la forma más sencilla es tomando a los elementos de la vecindad como un número binario, donde naturalmente la posición de cada elemento está ponderado y le corresponde una potencia de 2 para su conversión a decimal. Al convertir esta matriz con sus valores a un valor decimal, este valor sirve como id que identifica al tipo de vecindad permitiendo el incremento de su frecuencia cuando contabilizado.
+				
+				\hfill\break
+				\justifying
+				Después de la contabilización de frecuencias de cada vecindad se realiza la división por el número de elementos en el espacio, obteniendo así la probabilidad de aparición de cada vecindad en esa generación para el espacio de evolución.
+				
+				\begin{table}[!h]
+					\centering
+					\begin{tabular}{c c}
+						\includegraphics[width=9cm]{Imagenes/entropia_30.png} & \includegraphics[width=9cm]{Imagenes/entropia_54.png} \\
+						\includegraphics[width=9cm]{Imagenes/entropia_90.png} & \includegraphics[width=9cm]{Imagenes/entropia_110.png} 
+					\end{tabular}
+					\caption{Gráficas de la Entropía de Shannon después de 900 generaciones para diferentes reglas de evolución en un mismo tamaño de espacio de evolución(1000x900) y con una única célula central como configuración de inicio.\\ Reglas de evolución aplicadas de izquierda a derecha y arriba hacia abajo: a) 30, b) 54, c) 90, d) 110}
+				\end{table}
+			
+		\subsection{Cálculo de Attractores}
+			\justifying
+			El cálculo de los attractores para una configuración de tamaño \textit{n} y para una cierta regla de evolución \textit{r}, requiere del cálculo inicial del universo binario con potencia \textit{n}, pues la lista resultado de esta operación provee todas las combinaciones de cadenas binarias de tamaño \textit{n} que serán utilizadas como configuraciones iniciales de evolución con el objetivo de describir el o los árboles de evolución.
+			
+			\hfill\break
+			\justifying
+			Cada cadena binaria corresponderá con una configuración en su forma de células en 1D para su representación en ECA, de forma que para cada universo potencia se tienen en total $2^n$ hojas o nodos.
+			
+			\hfill\break
+			\justifying
+			Escencialmente se identifican 2 tipos de nodos con importancia particular:
+			\begin{itemize}
+				\item Nodo raíz: Este nodo refiere a una configuración en el ECA que es imposible de obtener mediante un proceso de evolución con cualquier otro tipo de configuración inicial. Estos nodos son el origen de un árbol propio desde el cual se generan demás nodos, siendo posible la intersección de estos subárboles dando la posibilidad de unirlos formando 1 solo árbol con múltiples nodos raíces.
+				
+				\item Nodo atractor: Para cada árbol generado en un estudio de este tipo, se identifica un nodo atractor. Este es el nodo con más número de predecesores(nodos que al evolucionar lo generan a este) formando parte del ciclo principal de cada árbol. Al final este tipo de nodos es el estado al que tiende la configuración a converger.
+			\end{itemize}
+		
+			\hfill\break
+			\justifying
+			Definidos por el usuario, los parámetros principales que son la regla de evolución y la potencia del universo binario, implementado en este caso como un rango de potencias $[n,m]$, el proceso inicia calculando las cadenas binarias de tamaño $n$ hasta $m$. Con la lista resultante del proceso anterior, se inicia tomando la primer cadena disponible y asignándolo como configuración inicial, para posteriormente realizar de forma consecutiva la evolución del espacio.
+			
+			\hfill\break
+			\justifying
+			La evolución de un espacio en esta rutina tiene como condición de parada la repetición de una configuración previamente calculada, de forma que un árbol se va generando a través de la aplicación de la regla a la configuración inicial hasta que sea identificado que en este propio ciclo o en otro previo, se ha calculado previamente el árbol de evoluciones de la configuración actual, este es el parametro que permite al algoritmo parar las evoluciones consecutivas.
+			
+			\hfill\break
+			\justifying
+			Para lograr esta condición de parada se realiza una copia de la lista del universo binario para cada respectiva potencia que van desde \textit{n} hasta \textit{m}. Tomando desde la configuración más pequeña como configuraciones de inicio, cuando se obtenga una configuración nueva a través de la evolución, se indica en este arreglo copia modificando el valor del elemento en el índice correspondiente a la cadena por un valor constante diferente que sirva como bandera para indicar su previo cálculo. En la implementación de una lista de cadenas binarias, cuando se identifica el cálculo de una nueva configuración esta cadena cambia su valor a la bandera \textit{\textbf{False}}.
+			
+			\hfill\break
+			\justifying
+			El indicar que configuraciones del universo binario han sido ya calculados permite al algoritmo ser más eficiente, evitando colocar como condición inicial a una cadena ya identificada durante un proceso de evolución.
+			
+			\hfill\break
+			\justifying
+			La identificación de los atractores puede realizarse a través de un análisis topológico, estudiando las relaciones entre los nodos resultantes; O de forma gráfica observando los árboles de evolución. Un grafo dirigido puede definirse utilizando variedad de bibliotecas en Python como un conjunto de relaciones binarias entre nodos, exigiendo del algoritmo que durante el proceso de evolución se guarde en una lista de relaciones y en forma de tupla, la descendencia de las configuraciones obtenidas después de 1 evolución.
+			
+			\hfill\break
+			\justifying
+			En el caso particular del análisis topológico, se identifica para cada grafo los ciclos existentes(1 para cada árbol generado), y de los nodos que conforman estos ciclos se identifica como atractor aquel con el mayor número de ancestros, o nodos que utilizando el proceso de evolución resultan en esta configuración. Es posible crear un algoritmo de forma sencilla utilizando las herramientas que provee la biblioteca \textbf{networkx} para el análisis de grafos.
+			
+			\hfill\break
+			\justifying
+			Para la impresión gráfica basta con solo definir el grafo en funcion de sus relaciones y con ayuda de la biblioteca \textbf{igraph}, ejecutar la creación y acomodo automático de los nodos para la conformación de una imagen. En el caso particula de esta biblioteca el archivo resultante otorga un EPS(Encapsulated PostScript). 
+			
+			\hfill\break
+			\justifying
+			La impresión gráfica también se vale de una ayuda del análisis topológico, permitiendo colorear los estados identificados como atractores de un color amarillo que permite constrastar facilmente entre los demás nodos. Esta ayuda visual se vuelve primordial a medida que se comparan los grafos resultantes cuando se aumenta el valor de \textit{n} como potencia del universo binario. Al punto que en esta simulación el resultado topológico es el único capaz de interpretar pues son tantos el número de nodos en la imagen que es imposible para la biblioteca realizar un acomodo ordenado dentro del espacio de impresión para ser identificable. Hay que recordar que el crecimiento del número total de nodos entre uno y otro universo es de orden exponencial.
+			
+			\hfill\break
+			\justifying
+			Finalmente durante el proceso de cálculo, y fungiendo al mismo tiempo como indicador de la ejecución del proceso y descriptor gráfico de los resultados progresivos obtenidos del algoritmo, en el espacio de evolución se imprimen las configuraciones siendo evaluadas así como sus predecesores que integran los árboles de evolución resultantes.
+			
+			\begin{table}[!h]
+				\centering
+				\begin{tabular}{c c}
+					\includegraphics[width=9cm]{Imagenes/atractores_celulas_30.png} & \includegraphics[width=9cm]{Imagenes/atractores_celulas_110.png} 
+				\end{tabular}
+				\caption{Resultado gráfico mostrado durante el proceso de cálculo de los attractores en las reglas 30 y 110 respectivamente}
+			\end{table}
+			
+			
+	\section{Análisis de atractores}
+		\justifying
+		La ciencia sostiene que existe una capacidad espontánea de las cosas para organizarse, siendo una propiedad inherente de los sistemas complejos. En este tipo de sistemas donde se poseen múltiples componentes que se relacionan de múltiples maneras y resultan múltiples trayectorias derivadas de su interacción, existen coincidencias o choques en el espacio que harán aparecer anomalías, cosas nuevas derivadas derivadas de circunstancias impredecibles que constituyen una modificación potencialmente organizadora en un sistema. A esta condición emergente se le denomina \textbf{Atractor}.
+		
+		\hfill\break
+		\justifying
+		La idea de los atractores se desarrolla en la teoría de los sistemas dinámicos y complejos, derivado del problema de la física clásica \textit{"Problema de los 3 cuerpos"}. Si la cantidad de posibilidades para predecir el comportamiento gravitacional de tres masas correlacionadas incluye soluciones caóticas (la línea histórica Newton/Laplace/Poincaré/Lorenz), la de miles de millones de elementos de cualquier sistema es aún mucho más “infinita”.
+		
+		\hfill\break
+		\justifying
+		Los atractores pueden ser un conjunto de valores numericos hacia los que un sistema tiende a evolucionar, geometricamente pueden tomar la apriencia de un punto, una curva, una variedad o incluso un conjunto complicado de estructuras fractales, y sin embargo para que un conjunto sea considerado un atractor debe cumplir que las trayectorias que le sean suficientemente próximas han de permanecer próximas incluso si son ligeramente perturbadas, por lo que no propiedad especial debe ser satisfecha excepto la de que la trayectoria del sistema permanezca en el atractor.
+		
+		\hfill\break
+		\justifying
+		Esta misma condición puede ser estudiada en la evolución de los ECAs en sus diferentes reglas, pues los patrones generados de la aplicación de las diferentes reglas describen un comportamiento distinto entre ellas.
+		
+		\hfill\break
+		\justifying
+		Así en el contexto de los ECAs como un sistema dinámico que evoluciona condicionado por la regla de evolución implementada, los estados de evolución tienen una tendencia a estabilizarse en una estructura en específico. Esta estructura corresponde a un atractor y el objetivo de este corto estudio es encontrar la estructura o estado atractor de una regla.
+		
+		\hfill\break
+		\justifying
+		Para algunas de las reglas existe una dinámica de atractores múltiples dentro el sistema, lo que describiría que ese sistema evolucionando con la regla en específico tiene una alta tendencia a estabilizarse sin la necesidad de evolucionar durante muchas generaciones. Debido a esto dificilmente será posible anotar especificamente el número de atractores existentes para tamaños de universos binarios potencia muy grandes, por lo que se en cambio se reportan las observaciones sobre patrones o tendencias identificadas en estos casos.
+		
+		\newpage
+		\subsection{Analisis de los campos de atracción}
+			\justifying
+			La meta del estudio consiste en encontrar y analizar los campos de atracción de los ECA cuando se implementan las 256 reglas de evolución posibles, y en un rango de valores para la potencia del universo binario(longitud de las configuraciones a evolucionar). Afortunadamente para este estudio se han encontrado equivalencias entre ciertas reglas pues muestran propiedades simetricas de reflexión como si la evolución se observara desde un espejo o se rotara sobre el eje de las ordenadas. Otras muestran un patrón completamente igual pero negado (las distribución de las células vivas en una regla muestran la misma evolución pero con aquellas que están muertas), y otras muestran las 2 propiedades al mismo tiempo, de forma que la lista de 256 reglas se acorta a tan solo 88 y se va a considerar el valor de \textit{n} desde 0 hasta 15.
+			
+			\begin{table}[!h]
+				\centering
+				\includegraphics[width=7cm]{Imagenes/reglas_equivalentes.jpeg}
+				\label{Reglas_equivalentes}
+				\caption{Tabla de las reglas equivalentes para los ECAs}
+			\end{table}
+			
+			\newpage
+			\subsubsection{Regla 0}
+				\justifying
+				Regla trivial donde todos los estados en una etapa de evolución se estabilizan en el estado \textbf{0}, el único y principal atractor de esta regla.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=17cm]{Imagenes/Atractores/0}
+					\caption{Grafo del atractor 0 para la regla 0 con $n=5$}
+					\label{Regla_0}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 1}
+				\justifying
+				Regla sencilla que converge rápidamente a un atractor. El mayor porcentaje de veces con 1 sola etapa de evolución la configuración converge, y aún asi existen convergencias con máximo 2 etapas de evolución.
+				
+				\hfill\break
+				\justifying
+				Para valores pequeños de \textit{n} el número de atractores se mantiene únicamente con 1 al estado 0, sin embargo a medida que \textit{n} va creciendo el número de atractores diferentes de 0 van apareciendo, llegando a ser 609 atractores para $n=15$ y más sin embargo siempre el 0 se muestra como un atractor para un gran número de estados.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=15.5cm]{Imagenes/Atractores/1}
+					\caption{Grafo de los multiples atractores para la regla 1 con $n=8$}
+					\label{Regla_1}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 2}
+				\justifying
+				Regla interesante que cuenta con una gran cantidad de nodos raíz o también llamadas hojas del edén, estos estados no pueden ser replicados por el ECA y tan solo existen y evolucionan pues han sido implementados desde el universo binario.
+				
+				\hfill\break
+				\justifying
+				La convergencia de la regla para cualquier tamaño de universo binario será al atractor \textit{0}, y sin embargo a medida que aumenta el universo, más fases de evolución le toma al ECA para converger. En el árbol se van definiendo por las ramas de evolución nodos también muy particulares que tienen la propiedad de atracción pues un gran número de nodos raíz como ancestros directos, inician su camino de convergencia a este nodo con 1 sola fase de evolución.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=16cm]{Imagenes/Atractores/2}
+					\caption{Grafo del atractor 0 único para la regla 2 con $n=7$}
+					\label{Regla_2}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 3}
+				\justifying
+				Con un comportamiento similar a la regla 2, esta regla converge al atractor de estado \textbf{0} sin  importar el tamaño de \textit{n}, y sin embargo se resalta la diferencia con la regla de 2 de la carencia de la gran cantidad de nodos con propiedades atractoras en el árbol de evolución, lo que indica que el número de evoluciones requeridas para converger al estado 0 se incrementa para esta regla.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=16cm]{Imagenes/Atractores/3}
+					\caption{Grafo del atractor 0 único para la regla 3 con $n=4$}
+					\label{Regla_3}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 4}
+				\justifying
+				Regla con una rapidez de convergencia de tan solo 1 evolución para todos los estados, aunque no a un solo atractor, pues se definen varios atractores más allá de que el estado \textbf{0} se mantienen como el atractor dominante por el número de ancestros que evolucionan a este.
+				
+				\hfill\break
+				\justifying
+				También se observan por primera vez estados que son al mismo tiempo hojas del Edén y atractores de ellos mismos. Estos estados no tienen influencia alguna en el sistema pues no interactuan con ninguna otra configuración y se estabilizan con ellos mismos. Evidentemente este tipo de estados nunca podrán ser generados por el ECA, y sin embargo su inexistencia en el sistema no afecta de forma alguna.
+			
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=17cm]{Imagenes/Atractores/4}
+					\caption{Grafo de los múltiples atractores para la regla 4 con $n=9$}
+					\label{Regla_4}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 5}
+				\justifying
+				El comportamiento de los campos de atracción de la regla 5 es sumamente similar a la 4, con algunas diferencias como el número más reducido de nodos atractores marginales(hojas del Edén y atractores al mismo tiempo), así como una mayor extensión de arboles con más de 1 fase de evolución para la convergencia.
+				
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=17cm]{Imagenes/Atractores/5}
+					\caption{Grafo de los múltiples atractores para la regla 5 con $n=7$}
+					\label{Regla_5}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 6}
+				\justifying
+				En esta regla se desarrollan árboles de evolución con más fases de evolución para lograr la convergencia, aumentando el número de árboles a medida que se aumenta el tamaño de \textit{n}. Se nota curiosamente que existe para cada una de los valores de \textit{n} un único atractor marginal, cambiando de estado en cada generación, pero manteniendose constante en número.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=17cm]{Imagenes/Atractores/6}
+					\caption{Grafo de los múltiples atractores para la regla 6 con $n=6$}
+					\label{Regla_6}
+				\end{figure}
+				
+				
+			\newpage
+			\subsubsection{Regla 7}
+				\justifying
+				Regla dominada por árboles de evolución con un gran número de nodos, por lo que la rapidez de convergencia para esta regla es menor. No se observa una mayoría significativa de nodos convergiendo en 1 sola evolución o atractores marginales.
+				
+				
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/7}
+					\caption{Grafo de los múltiples atractores para la regla 7 con $n=9$}
+					\label{Regla_7}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 8}
+				\justifying
+				Con un comportamiento muy similar a la regla 2, la regla converge únicamente al atractor de estado 0, aunque rescatablemente se observan más nodos no atractores con propiedades de atracción, así como una disminuida distancia entre cualquier nodo y la convergencia, por lo que el número de evoluciones necesarias para su estabilización se mantienen baja.
+				
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/8}
+					\caption{Grafo de del atractor 0 para la regla 8 con $n=7$}
+					\label{Regla_8}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 9}
+				\justifying
+				Regla con generación de árboles de evolución extensos pero escasos, por lo que para valores de \textit{n} pequeños el número de atractores se mantiene entre 1 y 3, alcanzando valores de 9 aumenta este número hasta alcanzar 6 árboles atractores con $n=14,15$.
+				
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/9}
+					\caption{Grafo de los múltiples atractores para la regla 9 con $n=6$}
+					\label{Regla_9}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 10}
+				\justifying					
+				Comportamiento parecido al de la regla 3 con algunos nodos con propiedades atractoras pero con un árbol de evolución más extendido y nodo atractor general en el estado 0.
+				
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/10}
+					\caption{Grafo del atractor único 0 para la regla 10 con $n=6$}
+					\label{Regla_10}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 11}
+				\justifying	
+				Regla que genera árboles de atracción extensos compuestos por muchos nodos, lo que indica que el número de evoluciones requeridas para la estabilización del sistema es grande. Muestra un comportamiento similar a la regla 6.
+				
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/11}
+					\caption{Grafo de los múltiples atractores para la regla 11 con $n=9$}
+					\label{Regla_11}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 12}
+				\justifying	
+				Regla de convergencia muy rápida, con todos los estados convergiendo a uno de los múltiples atractores en una sola evolución. También se destaca la presencia de algunos atractores marginales y comportamiento de los campos atractores similar a la regla 4.
+				
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/12}
+					\caption{Grafo de los múltiples atractores para la regla 12 con $n=8$}
+					\label{Regla_12}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 13}
+				\justifying
+				Regla que describe la creación de numerosos árboles de atracción con cantidad de atractores y una velocidad de convergencia baja.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/13}
+					\caption{Grafo de los múltiples atractores para la regla 13 con $n=7$}
+					\label{Regla_13}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 14}
+				\justifying
+				En la regla 14 se observa una producción de una cantidad moderada de árboles de atracción conformados por una gran cantidad de nodo, disminuyendo significativamente el número de evoluciones para alcanzar la estabilidad. Así también se observa la presencia de atractores marginales en cada una de las generaciones para diferentes valores de \textit{n}.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/14}
+					\caption{Grafo de los múltiples atractores para la regla 14 con $n=6$}
+					\label{Regla_14}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 15}
+				\justifying
+				Con comportamiento similar a la regla 3 y 10, esta regla genera un árbol de atracción única con 1 solo atractor diferente de 0 para todos los valores \textit{n}. Se observa una aglomeración en las ramas del árbol que indica una propiedad de atracción para los nodos extremos con una velocidad de convergencia moderada.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/15}
+					\caption{Grafo del atractor único para la regla 15 con $n=5$}
+					\label{Regla_15}
+				\end{figure}
+				
+				
+			\newpage
+			\subsubsection{Regla 18}
+				\justifying
+				Producción de árboles de atracción extensos con nodos que tienen propiedades atractoras, con presencia menor de árboles pequeños de unos pocos nodos. Se rescata la presencia dominante del atractor 0 donde existe una importante concentración de  estados que convergen en 1 sola evolución.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/18}
+					\caption{Grafo de los múltiples atractores para la regla 18 con $n=9$}
+					\label{Regla_18}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 19}
+				\justifying
+				Comportamiento con árboles de atracción que convergen en unas pocas  etapas de evolución al nodo atractor, con la presencia aislada de algunos árboles de evolución un poco más extensos. Destaca la presencia del nodo atractor 0 con una mayoría de nodos ancestros.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/19}
+					\caption{Grafo de los múltiples atractores para la regla 19 con $n=8$}
+					\label{Regla_19}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 22}
+				\justifying
+				Regla que se describe con una mayor producción de árboles de atracción conformados extensamente con un gran número de nodos y por lo tanto una velocidad de convergencia baja. Aparece en valores para \textit{n} impares, 1 único nodo atractor marginal con estado variante.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/22}
+					\caption{Grafo de los múltiples atractores para la regla 22 con $n=7$}
+					\label{Regla_22}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 23}
+				\justifying	
+				Comportamiento similar a la regla 22, esta regla genera árboles de atracción, con diferencia en que el número de estos es mucho mayor en comparación. Constantemente se observa la presencia de un atractor marginal, y árboles de pocas configuraciones.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/23}
+					\caption{Grafo de los múltiples atractores para la regla 23 con $n=6$}
+					\label{Regla_23}
+				\end{figure}
+				
+				
+			\newpage
+			\subsubsection{Regla 24}
+				\justifying	
+				Árbol de atracción único con convergencia al estado 0 y nodos en los estremos de las ramas con propiedades de atracción. Similar a las reglas 10 y 3.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/24}
+					\caption{Grafo del atractor único para la regla 24 con $n=5$}
+					\label{Regla_24}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 25}
+				\justifying	
+				La regla 25 produce árboles de atracción en cantidad bastante limitada y con una extensión importante, indicando directamente un gran número de fases de evolución para alcanzar la estabilidad en el estado atractor.
+				
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/25}
+					\caption{Grafo del atractor único para la regla 25 con $n=4$}
+					\label{Regla_25}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 26}
+				\justifying	
+				Con un comportamiento poco convencional en la descripción de los campos de atracción, la regla 26 genera arboles de evolución en diferentes cantidades para los valores de \textit{n}. En algunas genera hasta 3 árboles de atracción, en otros como para \textit{n=8,9} se generan únicamente 2 árboles y se alcanza un máximo de 5 atractores para \textit{n=12}.
+				
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/26}
+					\caption{Grafo de los atractores para la regla 26 con $n=9$}
+					\label{Regla_26}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 27}
+				\justifying	
+				Descrito con árboles de atracción en cantidad pequeña(máximo 3 para \textit{n=15}), se identifica 1 de estos árboles de evolución con una gran extensión y conformación de nodos, mientras que el otro se mantiene muy pequeño a tan solo algunos nodos de extensión. Importante mencionar que a medida que aumenta el valor de \textit{n} así también lo hace el número de árboles, describiendo un crecimiento muy lento.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/27}
+					\caption{Grafo de los atractores para la regla 27 con $n=7$}
+					\label{Regla_27}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 28}
+				\justifying	
+				Producción de árboles de atracción con un aumento en su número a medida que aumenta el valor de \textit{n} acelerada, aunque a causa de esto, la extensión de los árboles no es muy grande pero bien distribuida. Así también se reporta la observación constante de un par de atractores marginales que simpre pertenecen a los estados 0 y 1.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/28}
+					\caption{Grafo de los atractores para la regla 28 con $n=8$}
+					\label{Regla_28}
+				\end{figure}
+	
+			
+			\newpage
+			\subsubsection{Regla 29}
+				\justifying	
+				Alta producción de árboles conformados por unos pocos nodos, resultando en un conjunto grande de atractores a los que los demás estados covergen, pero asegura la velocidad de estabilización. La conformación de pequeños árboles de evolución es tan alta que alcanza un máximo de 3,526 cuando \textit{n=15}.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/29}
+					\caption{Grafo de los atractores para la regla 29 con $n=6$}
+					\label{Regla_29}
+				\end{figure}
+	
+			
+			\newpage
+			\subsubsection{Regla 30}
+				\justifying	
+				Con comportamiento similar a la regla 27, intercala entre la producción de 1 a 2 árboles de evolución y el estado 0 como atractor marginal. Uno de los árboles es simpre significativamente más grande que el otro, más no su distribución es bastante uniforme por lo que las hojas del árbol no tienen propiedades de atracción significativas.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/30}
+					\caption{Grafo de los atractores para la regla 30 con $n=5$}
+					\label{Regla_30}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 32}
+				\justifying	
+				Regla sumamente interesante que genera un árbol de evolución único con las hojas en los extremos de las ramas con propiedades de atracción, pero siempre manteniendo la convergencia para el nodo 0 el cual se encuentra constante en el centro de todas las ramas evolutivas. Finalmente se rescata una relativamente alta velocidad de convergencia pues las ramas no se encuentran conformadas por un gran número de nodos consecutivos.
+				
+				\hfill\break
+				\break
+				Esta regla genera gráficamente debido a la distribución de sus ramas, figuras de grafos muy particulares, que en algunos de los casos resultan topológicamente simetricas si se realiza un corte central
+	
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/32}
+					\caption{Grafo de los atractores para la regla 32 con $n=9$}
+					\label{Regla_32}
+				\end{figure}
+	
+			
+			\newpage
+			\subsubsection{Regla 33}
+				\justifying	
+				Producción de árboles de evolución compactos y en número considerable, con una gran predominancia por parte de los nodos atractores, por lo que el número de evouciones requeridas para la convergencia no es muy grande.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/33}
+					\caption{Grafo de los atractores para la regla 33 con $n=7$}
+					\label{Regla_33}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 34}
+				\justifying
+				Otra regla con producción de árbol de evolución único con hojas en extremos de las ramas con propiedades atractoras pero con convergencia a un único atractor, es estado 0.
+				
+				\hfill\break
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/34}
+					\caption{Grafo de los atractores para la regla 34 con $n=5$}
+					\label{Regla_34}
+				\end{figure}
+				
+	
+			\newpage
+			\subsubsection{Regla 35}
+				\justifying
+				Producción con tendencia lenta pero creciente de árboles de atracción con una distribución que permite la extensión de los árboles y previene las propiedades de atracción a otros nodos que no sean el atractor, esto influye directamente en el número de evoluciones requeridas para la estabilización del sistema, que será un número medianamente alto.
+				
+				\hfill\break
+				\justifying
+				Se observa una particularidad no observada hasta el momento en reglas anteriores, donde exista una tendencia generalizada donde el nodo atractor forme parte en un ciclo único compuesto por exclusivamente 2 estados. Si bien todos los atractores forman parte de un ciclo dentro del árbol de atracción, el conjunto de nodos que conforman el ciclo varia en extensión, y sin embargo en esta regla es constante la cardinalidad par.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/35}
+					\caption{Grafo de los atractores para la regla 35 con $n=5$}
+					\label{Regla_35}
+				\end{figure}
+				
+			
+			
+			\newpage
+			\subsubsection{Regla 36}
+				\justifying
+				Construcción limitada de árboles de evolución con pocas etapas de evolución hasta la convergencia del árbol. Se muestra predominante el atractor con el estado 0 para todos los casos de valores de \textit{n}, y se rescata finalmente la presencia de algunos atractores marginales que aumentan sus números lentamente a medida que \textit{n} también crece.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/36}
+					\caption{Grafo de los atractores para la regla 36 con $n=8$}
+					\label{Regla_36}
+				\end{figure}
+			
+			
+			
+			\newpage
+			\subsubsection{Regla 37}
+				\justifying
+				Regla que describe sus campos de atracción con la conformación de árboles de evolución en una tendencia creciente, según aumenta el valor de \textit{n}, con una distribución que permite su extensión aunque no elimina del todo las propiedades atractoras de algunos nodos extremos de las ramas, aunque esta es moderada y no se nota una concentración fuerte de nodos en estos extramos. Tambien se destaca la presencia errática de atractores marginales pero en números muy limitados
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/37}
+					\caption{Grafo de los atractores para la regla 37 con $n=6$}
+					\label{Regla_37}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 38}
+				\justifying
+				Comportamiento constante en la construción de un par de árboles de atracción que presentan en sus hojas extremas de las ramas la propiedad de atracción sin ser demasiada fuerte para concentrar un gran número de ancestros cada una.
+				
+				\hfill\break
+				\justifying
+				Junto con este comportamiento constante, se identifica la presencia del estado 0 como uno de los atractores en cada valor de \textit{n}, y el otro estado corresponde a la configuración que en cantidad decimal es curiosamente siempre la mitad del número de nodos totales evaluados, osea, la mitad de la cardinalidad del universo binario para la potencia \textit{n}.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/38}
+					\caption{Grafo de los atractores para la regla 38 con $n=7$}
+					\label{Regla_38}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 40}
+				\justifying
+				La regla 40 se describe sus campos de atracción al igual que varias otras reglas más donde se construye un árbol de evolución único con el estado 0 como principal atractor. Asi también se observa la propiedad de atracción con una particularmente mayor fuerza en nodos que se encuentran a un par de evoluciones de la convergencia del 0, y que disminuye la fuerza de esta atracción a nodos ancestros y predecesores, incluyendo al atractor 0 que no cuenta con esa clara predominancia en la atracción como sucede en otras reglas.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/40}
+					\caption{Grafo de los atractores para la regla 40 con $n=9$}
+					\label{Regla_40}
+				\end{figure}
+	
+			
+			\newpage
+			\subsubsection{Regla 41}
+				\justifying
+				Regla que genera árboles con una distribución extendida conformado por ramas de una gran cantidad de nodos. La generación del número de árboles por potencia de universo binario es creciente pero lenta.
+				
+				\hfill\break
+				\justifying
+				Una cualidad importante a resaltar, es la configuración de los nodos atractores para cada generación, siendo siempre un número par y al menos 1 de los atractores en esa generación, corresponde al valor del número de la potencia del universo(tamaño de células en las configuraciones evaluadas) elevado al cuadrado.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/41}
+					\caption{Grafo de los atractores para la regla 41 con $n=5$}
+					\label{Regla_41}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 42}
+				\justifying
+				Con comportamiento similar a la regla 34, se genera un árbol único donde el atractor será siempre la configuración 0. Se observan ramificaciónes que cuentan con nodos con propiedades atractoras aglomerando una considerable cantidad de ancestros en cada uno.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/42}
+					\caption{Grafo de los atractores para la regla 42 con $n=6$}
+					\label{Regla_42}
+				\end{figure}
+		
+			
+			\newpage
+			\subsubsection{Regla 43}
+				\justifying
+				Regla que genera árboles sencillos con una distribución extensa que se traduce en una velocidad más bien lenta para su estabilización. Muestra una tendencia a aumentar de forma lenta pero creciente, el número de árboles que se van creando.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/43}
+					\caption{Grafo de los atractores para la regla 43 con $n=7$}
+					\label{Regla_43}
+				\end{figure}
+				
+				
+			\newpage
+			\subsubsection{Regla 44}
+				\justifying
+				La regla 44 describe a sus campos atractores con una importante cantidad de árboles por generación con un número pequeño de nodos. Las etapas de evoluciones requeridas para la convergencia es también pequeña. Se presentan en tendencia creciente la aparición de atractores marginales.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/44}
+					\caption{Grafo de los atractores para la regla 44 con $n=8$}
+					\label{Regla_44}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 45}
+				\justifying
+				La topología de los árboles generados por la regla 43 son comúnes, con amplias ramas sin alta aglomeraciones de nodos en los extremos y por lo tanto una velocidad de establización lenta.
+				
+				\hfill\break
+				\justifying
+				Como particularidad en esta evolución se observa un comportamiento recurrente en la mayoría de las evoluciones(con excepción de la 9), donde al menos 1 atractor descrito en la generación menor inmediata se describe también en la siguiente.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/45}
+					\caption{Grafo de los atractores para la regla 45 con $n=9$}
+					\label{Regla_45}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 46}
+				\justifying
+				Generador del atractor marginal 0 y un árbol único de evolución con un conjunto de nodos pertenecientes a las ramas que muestran cualidades de atracción aglomerando una cantidad importante de nodos del edén.
+				
+				\hfill\break
+				\justifying
+				Al igual que se ha descrito con otras reglas, el atractor del árbol de atracción que se aprecia, es la potencia de 2 resultante de elevar $2^n$, donde \textit{n} es el número de células utlizadas en la evolución.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/46}
+					\caption{Grafo de los atractores para la regla 46 con $n=9$}
+					\label{Regla_46}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 50}
+				\justifying
+				Los árboles creados para esta regla describen una tendencia creciente a medida que aumenta \textit{n}, en el número de árboles generados. Estos árboles tienen una topología bien distribuida por lo que no existen cualidades atractoras en otros nodos que no se hayan encontrado atractores.
+				
+				\hfill\break
+				\justifying
+				Se destaca la construcción de los árboles, observándose en una misma generación, aquellos conformados de 2 nodos y que van creciendo para alcanzar el árbol principal que lo compone la mayoría de nodos.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/50}
+					\caption{Grafo de los atractores para la regla 50 con $n=7$}
+					\label{Regla_50}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 51}
+				\justifying
+				La regla 51 muestra la construcción de campos de atracción exclusivamente compuestos por 2 nodos, esto evidentemente va generar un gran conjunto de atractores en cada una de las generaciones, pero también aumenta la velocidad de convergencia a tan solo una fase de evolución.
+				
+				\hfill\break
+				\justifying
+				Las configuraciones atractores serán siempre los nodos que van desde el 0 hasta la mitad del conjunto de nodos, siendo la segunda mitad siempre los nodos raíz.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/51}
+					\caption{Grafo de los atractores para la regla 51 con $n=5$}
+					\label{Regla_51}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 54}
+				\justifying
+				Esta regla frabrica árboles con 3 diferencias topológicas entre ellos. Siempre presente el atractor 0, se caracteriza la conformación de este árbol con un único ancestro el cual muestra propiedades de atracción importantes, aglomerando a su alrededor nodos del edén.
+				
+				\hfill\break
+				\justifying
+				El segundo tipo de árbol que se encuentra es de extensión pequeña pero que forma un característico ciclo de 4 nodos con el atractor, y de las que pueden surgir ramas que directamente se unen a la configuración atractora sin deformar su ciclo.
+				
+				\hfill\break
+				\justifying
+				Finalmente el tercer tipo de árbol es uno común, de gran extensión, con ramas de nodos secuenciales que describen una convergencia lenta.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/54}
+					\caption{Grafo de los atractores para la regla 54 con $n=8$}
+					\label{Regla_54}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 56}
+				\justifying
+				Generador de un árbol único con atractor al nodo 0, tiene como característica que sus nodos en los extremos de las ramas presentan propiedades atractoras, de forma que una cantidad de nódos del edén son ancestros de 1 solo nodo.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/56}
+					\caption{Grafo del atractor para la regla 56 con $n=7$}
+					\label{Regla_56}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 57}
+				\justifying
+				Los árboles de atracción de la regla 57 se describen con árboles de mediana extensión con varios nodos secuenciales conformando sus ramas, pero no siendo demasiado grandes pues el conjunto de nodos se reparten entre varios árboles. La regla muestra una tendencia creciente al número de árboles que se generan.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/57}
+					\caption{Grafo de los atractores para la regla 57 con $n=5$}
+					\label{Regla_57}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 58}
+				\justifying
+				Regla fabricante de 2 nodos atractores por generación: El 0 como atractor marginal(presente únicamente en potencias \textit{n} impares) y un árbol de evoluciones con una característica rama principal al atractor que se compone de varios nodos en secuencia que tiene la particularidad de generar ramas cada uno, siendo ramas de no una extensión tan grande pero que si cohesiona a varios nodos a su alrededor.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/58}
+					\caption{Grafo de los atractores para la regla 58 con $n=8$}
+					\label{Regla_58}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 60}
+				\justifying
+				La generación de los campos atractores de la regla 60 es muy particular en el sentido que sus generaciones consiste de únicamente ciclos simples, no hay construcción de árboles con ramas extensas, aunque se advierte la presencia de los nodos 0 y 1 como atractores marginales.
+				
+				\hfill\break
+				\justifying
+				Particularmente la construcción de los ciclos se mantiene entre diferentes generaciones. Implicando que con generaciones mayores tan solo se agregan nuevos ciclos con los nodos no explorados anteriormente pero las estructuras construidas con valores de \textit{n} menores no se destruyen ni se inmutan.
+				
+				\hfill\break
+				\justifying
+				Esta generación es particularmente especial pues describe una regla en el que los ECAs son capaces de de generar cada una de las configuraciones posibles existentes, esto por la ausencia de los nodos edén.
+				
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/60}
+					\caption{Grafo de los atractores para la regla 60 con $n=9$}
+					\label{Regla_60}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 62}
+				\justifying
+				Regla constructora de árboles de evolución con una tendencia creciente a incrementar el número de árboles que genera así como también aumenta el valor de \textit{n}.
+				
+				\hfill\break
+				\justifying
+				Se observa la constante presencia del nodo 0 como atractor marginal en todas las generaciones.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/62}
+					\caption{Grafo de los atractores para la regla 62 con $n=5$}
+					\label{Regla_62}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 72}
+				\justifying
+				Regla productora de árboles de evolución con pocas fases de evolución requeridas para la convergencia. Se observa una importante capacidad de atracción para nodos extremos en las ramas de cada árbol, y sin embargo destacando de entre todas las estructuras el árbol del atractor 0, siendo evidentemente el más importante en cuanto a estabilización refiere por el número de configuraciones que se unen a este.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/72}
+					\caption{Grafo de los atractores para la regla 72 con $n=7$}
+					\label{Regla_72}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 73}
+				\justifying
+				Regla constructora de árboles atractores en gran número por cada generación. Estos varian en extensión y nodos que los conforman, habiendo uno con una gran número de nodos, el atractor 0, y los demás paulativamente se muestran con una extensión menor.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/73}
+					\caption{Grafo de los atractores para la regla 73 con $n=6$}
+					\label{Regla_73}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 74}
+				\justifying
+				Fabricante de árboles con una gran extensión en su topología, un importante número de nodos consecutivos crean las ramas de los árboles, pero siempre destacando el árbol del atractor 0, siendo evidentemente el más importante de los generados.
+				
+				\hfill\break
+				\justifying
+				Se advierte la presencia de 1 atractor marginal, que aunque desaparece en algunas generaciones, conserva la tendencia creciente como múltiplo de 3.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/74}
+					\caption{Grafo de los atractores para la regla 74 con $n=6$}
+					\label{Regla_74}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 76}
+				\justifying
+				Regla constructora de campos de atracción con minimas fases de evolución a la estabilización. La distribución de pocos nodos por atractor exige de la generación la creación de una impresionante cantidad de atractores, los cuales sin embargo, es su mayoría son atractores marginales.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/76}
+					\caption{Grafo de los atractores para la regla 76 con $n=7$}
+					\label{Regla_76}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 77}
+				\justifying
+				Los campos de atracción para la regla 77 se describe con un conjunto de atractores principalles, los cuales cuenta con un gran número de nodos conformando su árbol de evolución.
+				
+				\hfill\break
+				\justifying
+				Mientras los demás atractores con un número disminuido de ancestros, siguen mostrando la cualidad de atracción aglomerandos hojas del edén.
+				
+				\hfill\break
+				\justifying
+				De forma general se observa una poca consecución de nodos en las ramas, por lo que la velocidad de convergencia es bastante rápida, tomando en cuenta también que la presencia de nodos marginales implica que no se requieren fases de evolución cuando se utilizan tales configuraciones.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/77}
+					\caption{Grafo de los atractores para la regla 77 con $n=9$}
+					\label{Regla_77}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 78}
+				\justifying
+				Regla constructora de árboles de evolución con ramas construidas por nodos consecutivos, no existen aglomeraciones importantes de ancestros en un solo nodo. También se observa una tendencia creciente de fabricación de un gran número de árboles por generación.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/78}
+					\caption{Grafo de los atractores para la regla 78 con $n=8$}
+					\label{Regla_78}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 90}
+				\justifying
+				Regla con comportamiento particularmente errático en la construcción de sus campos de atracción. Mostrando para diferentes valores de \textit{n}, comportamientos particulares de un conjunto de reglas, estas pueden cambiar en la siguiente generación.
+				
+				\hfill\break
+				\justifying
+				Poniendo como ejemplo, en la generación 5 la construcción se realiza de varios árboles con topología extensa. En la siguiente generación su comportamiento es de fabricación de un árbol único con atractor el estado 0, y 2 generaciones posteriores se observa la creación de campos de atracción con ciclos bien definidos para un gran número de campos de atracción.
+				
+				\hfill\break
+				\justifying
+				A pesar de este dinamismo en la regla, se mantiene constante la presencia del atractor 0 entre generaciones, algunas veces como atractor con un árbol de evolución, aveces como atractor único y finalmente en ocasiones como atractor marginal.
+				
+				\begin{table}[!h]
+					\centering
+					\begin{tabular}{c c}
+						\includegraphics[width=9cm]{Imagenes/Atractores/90_5} & \includegraphics[width=9cm]{Imagenes/Atractores/90_6} \\
+						\multicolumn{2}{c}{\includegraphics[width=9cm]{Imagenes/Atractores/90_8}}
+					\end{tabular}
+					\caption{Grafo de los atractores para la regla 90 con $n=5,6,8$}
+					\label{Regla_90}
+				\end{table}
+			
+			\newpage
+			\subsubsection{Regla 94}
+				\justifying
+				La regla 94 describe los campos atractores mediante la construcción de varios árboles de evolución con distribuciones diferentes: algunos de ellos tienen una extensión grande por ramas con nodos consecutivos, otros tantos generan ciclos y finalmente algunos cuentan con nodos con propiedades atractoras y aglomeran ancestros.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/94}
+					\caption{Grafo de los atractores para la regla 94 con $n=7$}
+					\label{Regla_94}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 104}
+				\justifying
+				Con el nodo 0 como atractor principal, la regla 104 genera arboles pequeños con ramas de nodos consecutivos sin propiedades atractoras, así como algunos atractores marginales.
+				
+				\hfill\break
+				\justifying
+				De manera general, el tiempo de convergencia es moderado y no se requieren de mucha fases para la estabilización del sistema.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/104}
+					\caption{Grafo de los atractores para la regla 104 con $n=8$}
+					\label{Regla_104}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 105}
+				\justifying
+				Al igual que sucedía con la regla 90 y \textit{n=8}, esta regla muestra una construcción de sus atractores a través de ciclos de los que les surgen ramas con nodos consecutivos.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/105}
+					\caption{Grafo de los atractores para la regla 105 con $n=6$}
+					\label{Regla_105}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 106}
+				\justifying
+				La regla 106 realiza la construcción de un árbol de evolución con el nodo 0 como atractor, más característico este arbol es la derivación de muchas ramas que se construyen para un único atractor. También se puede observar la presencia de un atractor marginal que mantiene su identidad como múltiplo de 3 y 2 al mismo tiempo.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/106}
+					\caption{Grafo de los atractores para la regla 106 con $n=7$}
+					\label{Regla_106}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 108}
+				\justifying
+				Regla característica por la construcción de sus campos de atracción con una noción geométrica. De forma general las estructuras construidas para esta regla son con una cantidad pequeña de nodos, generando a su vez una gran catidad de estructuras, destacando además un gran conjunto de atractores marginales presentes en todas las generaciones.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/108}
+					\caption{Grafo de los atractores para la regla 108 con $n=7$}
+					\label{Regla_108}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 110}
+				\justifying
+				Típica construcción de un moderado número de árboles de evolución con topología extensa. Constantemente se advierte la presencia de un par de atractores marginales con valor 0 y el otro que aumenta como múltiplo de 2.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/110}
+					\caption{Grafo de los atractores para la regla 110 con $n=5$}
+					\label{Regla_110}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 122}
+				\justifying
+				Típica construcción de árboles extensos con tendencia a crecer su número a medida que \textit{n} aumenta su valor. Con este tipo de topologías de identifica una velocidad de convergencia lenta.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/122}
+					\caption{Grafo de los atractores para la regla 122 con $n=6$}
+					\label{Regla_122}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 126}
+				\justifying
+				Interesante comportamiento de la regla donde se construye un árbol principal con un nodo con una fuerte propiedad de atracción, pudiendo ser o no, este nodo un atractor.
+				
+				\hfill\break
+				\justifying
+				Fuera de este árbol principal, se crean algunos árboles pequeños y otros campos de atracción con nodos que también comparte la propiedad atractora aglomeando nodos ancestros.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/126}
+					\caption{Grafo de los atractores para la regla 126 con $n=9$}
+					\label{Regla_126}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 128}
+				\justifying
+				Regla con un comportamiento parecido a las 8, 40, pero más similar a la 32, su evolución construye un árbol de evoluciones con el nodo 0 como atractor principal. Contando con una fuerte propiedad de atracción el nodo 0 y aglomerando gran cantidad de ancestros directos como nodos raíz, también se identifican ramas que cuentan con nodos extremos que igual cuentan con la propiedad de atracción pero en menor medida.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/128}
+					\caption{Grafo del atractor para la regla 128 con $n=7$}
+					\label{Regla_128}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 130}
+				\justifying
+				Con comportamiento similar a otras reglas, se genera un árbol único con el nodo 0 como atractor principal, a pesar de esto, los nodos en la rama principal cuentan con la propiedad atractora y aglomeran nodos ancestros.
+				
+				\hfill\break
+				\justifying
+				El tiempo de convergencia con la topología de este árbol es moderada pues si se tienen ramas con nodos consecutivos, pero no son cadenas exageradamente extensas.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/130}
+					\caption{Grafo del atractor para la regla 130 con $n=5$}
+					\label{Regla_130}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 132}
+				\justifying
+				Regla constructora de una gran número de campos de atracción con un conjunto limitado de nodos por cada uno, a excepción del árbol principal con el nodo 0 como atractor, la cual con una imporante capacidad de atracción, aglomera un número de ancestros directamente además de las ramas que se unen a este.
+				
+				\hfill\break
+				\justifying
+				También se observa una presencia constante de atractores marginales, y que en términos generales va a propiciar a que el número de evoluciones requeridas para la convergencia sea moderadamente pocas.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/132}
+					\caption{Grafo de los atractores para la regla 132 con $n=8$}
+					\label{Regla_132}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 134}
+				\justifying
+				La construcción de los campos de atracción para la regla 134 es típica, con una tendencia a crecer el número de árboles que se crean, estos cuentan con una topología extensa con ramas de nodos consecutivos. Destaca de entre los árboles el principal que tiene el nodo 0 como atractor y que acapara la mayor cantidad de nodos en su construcción.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/134}
+					\caption{Grafo del atractor para la regla 134 con $n=6$}
+					\label{Regla_134}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 136}
+				\justifying
+				El árbol generado en la regla 136 es similar a otros generados por reglas anteriormente mencionadas. El atractor 0 funge como nodo principal con gran atracción conjunto un numero importante de ancestros, pero a pesar de esto se cuentan con ramas largas de nodos consecutivos.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/136}
+					\caption{Grafo del atractor para la regla 136 con $n=8$}
+					\label{Regla_136}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 138}
+				\justifying
+				Grafo único con nodos en ramas del árbol con propiedades atractoras, siendo más marcada esta propiedad en los nodos extremos, aunque también en el nodo atractor 0.
+				
+				\hfill\break
+				\justifying
+				En términos generales la velocidad de convergencia es moderada a causa de las ramas, que aunque existen, no son tan extensas con cadenas de nodos consecutivos.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/138}
+					\caption{Grafo del atractor para la regla 138 con $n=6$}
+					\label{Regla_138}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 140}
+				\justifying
+				La regla 140 describe campos de atracción cortos, con cadenas secuenciales de nodos en configuraciones no muy grandes aunque bastas en número. Asi mismo se localizan la presencia de atractores marginales.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/140}
+					\caption{Grafo de los atractores para la regla 140 con $n=7$}
+					\label{Regla_140}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 142}
+				\justifying
+				Configuraciones típicas con construcción de árboles con una topología extensa y grandes cadenas de nodos consecutivos, destacando un árbol con atractor principal por el número de nodos que lo conforman. También se advierte la presencia de al menos 1 atractor marginal en cada generación.
+			
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/142}
+					\caption{Grafo de los atractores para la regla 142 con $n=5$}
+					\label{Regla_142}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 146}
+				\justifying
+				Se observa una dinámica variante sin un patrón bien definido en la construcción de los campos de atracción para diferentes valores de \textit{n} en la regla 146. En algunas de las generaciones se observan árboles con cadenas de nodos consecutivos en cantidades mayores a 1, en otras generaciones árboles únicos con el nodo 0 como atractor principal y otros tanto árboles con nodos con propiedades de atracción.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/146}
+					\caption{Grafo de los atractores para la regla 146 con $n=4$}
+					\label{Regla_146}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 150}
+				\justifying
+				Regla fabricante de árboles de evolución con topologías extensas sin propiedades aglomerantes en nodos específicos. Cuenta con una tendencia creciente en el número de árboles que se generar a medida que \textit{n} aumenta también. Se advierte la presencia constante del atractor 0 como marginal.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/150}
+					\caption{Grafo de los atractores para la regla 150 con $n=7$}
+					\label{Regla_150}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 152}
+				\justifying
+				La regla 152 construye un único árbol con el nodo 0 como atractor principal y se caracteriza por constar con una rama principal de larga extensión y de la cual se le unen demás ramas. De forma general su velocidad de estabilización es moderada por el número de cadenas consecutivas de nodos.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/152}
+					\caption{Grafo de los atractores para la regla 152 con $n=6$}
+					\label{Regla_152}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 154}
+				\justifying	
+				Con un comportamiento igualmente errático sin patrón identificable a la regla 146, para diferentes valores de \textit{n} los árboles construidos algunas veces son extensos y en número mayor a 1, mientras que en otros casos son únicos y con el nodo 0 como atractor principal.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/154}
+					\caption{Grafo de los atractores para la regla 154 con $n=4$}
+					\label{Regla_154}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 156}
+				\justifying	
+				Esta regla describe sus campos de atracción como árboles con ramas de nodos consecutivos sin propiedades atractoras en algún nodo presente. También se advierte la presencia de atractores marginales en cada evolución.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/156}
+					\caption{Grafo de los atractores para la regla 156 con $n=7$}
+					\label{Regla_156}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 160}
+				\justifying		
+				Similar a la regla 128 y 32, se trata de un árbol único con el nodo 0 como atractor principal del que derivan ramas con nodos que también poseen la cualidad de atracción.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/160}
+					\caption{Grafo del atractor para la regla 160 con $n=8$}
+					\label{Regla_160}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 162}
+				\justifying		
+				Árbol único con el nodo 0 como atractor principal. El propio atractor 0 no muestra cualidades de atracción aunque los nodos en los extremos de las ramas si, aglomerando hojas del edén como nodos ancestros.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/162}
+					\caption{Grafo del atractor para la regla 162 con $n=6$}
+					\label{Regla_162}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 164}
+				\justifying	
+				Con un árbol principal del nodo 0 como atractor, se conforman otros árboles más pequeños de cadenas consecutivas y atractores marginales. Se observa una tendencia creciente en el número de árboles que se generan a medida que aumenta el valor de \textit{n}.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/164}
+					\caption{Grafo del atractor para la regla 164 con $n=5$}
+					\label{Regla_164}
+				\end{figure}
+				
+			\newpage
+			\subsubsection{Regla 168}
+				\justifying
+				Regla que genera un árbol con el nodo 0 como único atractor que muestra una rama principal con una cadena larga consecutiva de nodos, mientras más ramas se unen directamente al nodo atractor pero sobre las que los nodos extremos cuentan con capacidades de atracción conjuntando hojas del edén.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/168}
+					\caption{Grafo del atractor para la regla 168 con $n=7$}
+					\label{Regla_168}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 170}
+				\justifying
+				Con características muy similares a reglas como la 162, 138, 56 y 34 entre otras, se genera un árbol único con el nodo 0 como atractor principal, con la particularidad de contar con ramas donde los nodos extremos cuentan con la propiedad atractora que les permita aglomerar nodos del edén como ancestros, y sin embargo el nodo atractor no cuenta con estas propiedades, teniendo un único ancestro.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/170}
+					\caption{Grafo del atractor para la regla 170 con $n=9$}
+					\label{Regla_170}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 172}
+				\justifying
+				Regla capaz de generar en números árboles de evolución, que particularmente para esta regla, comparten una rama principal extensa de nodos consecutivos, y de la cual se le agregan y derivan demás ramas de cadenas consecutivas. Se identifica una tendencia creciente a aumentar el número de estructuras, como así también la presencia de atractores marginales.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/172}
+					\caption{Grafo de los atractores para la regla 172 con $n=7$}
+					\label{Regla_172}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 178}
+				\justifying
+				Conformando árboles con característicos nodos con propiedades atractoras, la regla 178 también genera algunas estructuras más pequeñas de árboles con cadenas consecutivas, sin embargo el nodo atractor principal acapara la mayor cantidad de nodos que lo conforman.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/178}
+					\caption{Grafo de los atractores para la regla 178 con $n=8$}
+					\label{Regla_178}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 184}
+				\justifying
+				No muy distinto a reglas como la 162 y 138, se genera un árbol único con el nodo 0 como atractor principal, contando en los nodos de los extremos de las ramas propiedades atractoras. A pesar de esto se puede observar particular a esta regla, la asimetría con respecto al atractor, habiendo una concentración clara de mayor número de nodos hacia una de las 2 ramas que conectan al atractor.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/184}
+					\caption{Grafo de los atractores para la regla 184 con $n=6$}
+					\label{Regla_184}
+				\end{figure}
+			
+			
+			\newpage
+			\subsubsection{Regla 200}
+				\justifying
+				La regla 200 realiza construcciones características de campos de atracción con nodos atractores con fuertes campos de atracción, de esta forma se identifica una velocidad de convergencia de tan solo 1 evolución, encontrando a todos los nodos no atractores, como hojas del edén ancestros a un nodo atractor.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/200}
+					\caption{Grafo de los atractores para la regla 200 con $n=7$}
+					\label{Regla_200}
+				\end{figure}
+			
+			\newpage
+			\subsubsection{Regla 204}
+				\justifying
+				Regla muy característica donde para cada configuración posible en la evolución es un atractor, esto evidentemente asegura la convergencia inmediata de la evolución, eliminando completamente la complejidad del sistema y evitando la evolución en nuevas y emocionantes estructuras.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/204}
+					\caption{Grafo de los atractores para la regla 204 con $n=7$}
+					\label{Regla_204}
+				\end{figure}
+				
+			
+			\newpage
+			\subsubsection{Regla 232}
+				\justifying
+				La regla 232 genera estructuras compactas resultado de los nodos atractores con campos fuertes de atracción, se tienen entonces una gran cantidad de hojas del edén como ancestros del atractores, lo que propicia a la estabilidad del sistema. Así también se advierten atractores marginales constantemente a través de las generaciones para diferentes \textit{n}.
+				
+				\hfill\break
+				\hfill\break
+				\begin{figure}[!h]
+					\centering
+					\includegraphics[width=18cm]{Imagenes/Atractores/232}
+					\caption{Grafo de los atractores para la regla 232 con $n=9$}
+					\label{Regla_232}
+				\end{figure}
+	\newpage
+	\section{Conclusión}
+		Con la elaboración de este segundo programa se tenian 2 objetivos. El primero de ellos la creación completa del simulador que permitiera observar mediante la animación gráfica, la evolución de las células unidimensionales según una regla especificada.
+		
+		\hfill\break
+		\justifying
+		Como segundo objetivo se planteó el análisis de los atractores de las reglas, lo que requería del poder computacional y la infraestructura elaborada con el simulador de ECAs.
+		
+		\hfill\break
+		\justifying
+		Habiendo aprendido del primer simulador bidimensional tipo \textit{Life}, este segundo simulador se creó ocupando como base conceptual y gráfica, el primero, se evaluaron las áreas de oportunidad y se actualizaron según los requisitos de este segundo simulador.
+		
+		\hfill\break
+		\justifying
+		Un aspecto en el que se basa y se le pone importante atención a este segundo simulador, es la optimización para la ejecución del aparto gráfico. Este aspecto muy diferente al instinto inicial que tuviera para su logro, cambió radicalmente los mecanismos de operación interna del simulador frente al primero.
+		
+		\hfill\break
+		\justifying
+		Corriendo en un hilo único principal, el primer simulador realiza una reimpresión constante de la pantalla en una relación de 60 cuadros por segundo, situación que cuando se tenian espacios de evolución grandes de más de 500 células por dimensión, resultaba en una tarea pesada para el CPU por la cantidad de elementos a reimprimir además de la sobrecarga operacional que ocurría antes de realizar la impresión.
+		
+		\hfill\break
+		\justifying
+		Considerando esto el enfoque que se tomó fue la creación de 3 hilos además del principal, el primero de ellos se encarga de atender los eventos desencadenados por las acciones de usuario: Clicks, presión de teclas, scrolling, etc. Que desencadenan entonces acciones que pueden modificar células, ingresar caracteres a los campos de texto, iniciar o pausar la evolución, etc. Procesos que son agregados a la cola de funciones.
+		
+		\hfill\break
+		\justifying
+		Como segundo hilo se encarga de manejar los eventos internos que repercuten directamente a los gráficos de la simulación. Por el colapso del sprite en el cursor con un botón durante un click, una tecla presionada mientras el foco lo tiene un campo de texto, etc.
+		
+		\hfill\break
+		\justifying
+		Y finalmente el tercer hilo enfocado en funciones, es capaz de ejecutar asíncronamente funciones de cualquier tipo, de esta forma si un proceso es demasiado lento se evita que el apartado gráfico también sufra las consecuencias, por lo que se simula una ejecución en segundo plano en una dinámica de cola de eventos.
+		
+		\hfill\break
+		\justifying
+		Adicional a esta diversificación de los flujos de ejecución y atendiendo a las herramientas más técnicas de PyGame, se logra una gran optimización controlando específicamente cuando y que secciones de pantalla refrescar para mostrar en la GUI. Esto se logra gracias gracias a una combinación de los flujos alternos que permiten atender de manera asíncrona eventos internos, y la capacidad de PyGame de refrescar la pantalla en secciones cuando se le indique, permitiendo de esta forma que si en la interfaz no hay interacción con botones o cambios diversos en la interfaz, se evite completamente el proceso completo de reimpresión de todos los elementos, realizándose cuando existe una interacción o cambio, del componente específico que muestra un cambio visual.
+		
+		\hfill\break
+		\justifying
+		Eso respecto a la infraestructura del simulador, ahora respecto a proceso de cálculo de atractores, se enfrentó a algunos problemas principalmente con la conversión de los grafos de entidades lógicas a imágenes para su interpretación. Como primer aproximación se ocupó un par de bibliotecas, \textit{igraph} en conjunto con \textit{cairocffi}, que para conjuntos relativamente pequeños de nodos, realizaban la imagenes de los grafos de manera excelente, sin embargo a partir de la potencia $2^10$, no se logró conseguir pudieran visualizarse correctamente los grafos, atribuyéndose esta situación a la propia biblioteca que ya no es capaz de manejarlos, pues se intentó incrementado drásticamente el tamaño del lienzo a valores como 10k $\times$ 10k pixeles, y aún con esto las distribuciones eran compactadas en grafos interpretables.
+		
+		\hfill\break
+		\justifying
+		Se buscaron alternativas y se encontró la biblioteca \textit{networkx}, la cúal fue probada en el mismo rubro y era capaz de imprimir únicamente utilizando Matplotlib como herramienta subyacente, y de todas maneras creando distribuciones de los nodos para valores aún pequeños de potencia, completamente incorrectos y para nada interpretables.
+		
+		\hfill\break
+		\justifying
+		Al final se decidió por utilizar \textit{igraph} para la graficación limitada visualmente a la potencia 9, y \textit{networkx} como herramienta para el análisis de los grafos, implementando herramientas sumamente útiles que permitió identificar los atractores de cada árbol de evolución sin una inspección humana previa, y esto facilitó la asignación de un color(amarillo) distinto a este nodo como ayuda visual en la imagen de las evoluciones.
+		
+		\hfill\break
+		\justifying
+		Ambos objetivos se lograron y se cubrieron todos los requerimientos especificados tanto para el programa simulador, como para el análisis completo de atractores, enfrentando por su puesto algunas complicaciones de las cuales la gran mayoría fueron atendidas y subsanadas para entregar un simulador completamente funcional que además incluye la función para la identificación de los campos atractores de una regla en un rango de potencias.
+	
+	\section{Código Fuente}
+		El código fuente también puede ser encontrado en el repositorio de GitHub para su consulta o descarga para prueba:
+		\textbf{https://github.com/LaloValle/Simulador\_ECAs\_y\_atractores}
+		
+		El código fuente está conformado por un total de 5 módulos de Python y un archivo principal donde se cuenta con la función main que controla el flujo principal del programa y contexto gráfico para la biblioteca PyGame.
+		
+		\subsection{Módulos}
+			Los módulos son archivos de código Python que agrupan clases, funciones, constantes, etc. que semánticamente se encuentran correlacionadas bajo un contexto común. Los siguientes módulos contienen en su mayoría Clases que definen componentes lógicos, nodos de un sistema, componentes gráficos; también pueden contener Constantes de uso extendido entre los módulos del programa.
+			
+		\subsubsection{Constant}
+			Módulo que integra algunos recursos constantes comúnes a varios de los módulos en la simulación. Los recursos incluyen tuplas de colores en formato RGB, instancias de fuentes para PyGame y matrices de conversión.
+			\lstinputlisting[language=Python]{../Code/Constants.py}
+		
+		\subsubsection{Layouts}
+			Parte de los módulos relacionados a los gráficos, este módulo está conformado por clases que como elementos utilizados en interfaces gráficas, funcionan como herramientas que dan estructura a los elementos o que aportan cierta funcionalidad relacionada con su estructuración. Estos elementos pueden tener, o no, una representación gráfica visual.
+			
+			\paragraph{Clase Grid}
+			Mencionada en secciones anteriores, esta clase define un componente estructural sin representación visual, pero que provee métodos útiles para la estructuración automática de elementos en un formato tipo tabla.
+			
+			\paragraph{Clase SideBar}
+			Elemento gráfico estructural con representación visual como de un gran rectángulo que abarca lo alto de la ventana, es utilizada para agrupar visualmente elementos gráficos, y proveer una posición de referencia para colocar otros componentes. En particual esta clase es una clase \textit{Singleton}, de forma que en el contexto de la simulación existe una instancia única, por lo que la definición y colocación de elementos como botones, etc. Se realiza directamente en la clase.
+			
+			\paragraph{Clase BottomBar}
+			Elemento gráfico estructural con representación visual como un delgado rectángulo ubicado en la parte inferior de la ventana ocupando todo su ancho. Con comportamiento parecido a la clase SideBar, sirve como agrupador visual y como referencia para otros componentes, siendo en este caso el de los textos que indican las variables dinámicas de la simulación.
+		
+		\lstinputlisting[language=Python]{../Code/Layouts.py}
+		
+		\subsubsection{GraphicalComponents}
+			Módulo relacionado a los gráficos, integrando de hecho clases que definen componentes gráficos con representación visual.
+			
+			\paragraph{Control}
+			Definida como una clase modelo o abstracta, define el formato o esqueleto básico de muchos de los componentes \textit{Sprite} en el mismo módulo.
+			
+			\paragraph{MousePointer}
+			Única clase de componente gráfico sin representación visual en este módulo. Su principal objetivo es permitir identificar el colapso de otros componentes \textit{Sprite} dentro de la interfaz con el cursor.
+			
+			Consiste primordialmente en un \textit{Sprite} rectángulo de una tamaño generalmente pequeño como de 1px por 1px, que se mueve a la misma posición que sigue el cursor.
+			
+			\paragraph{CircularButton}
+			Clase que representa un componente gráfico con visualización, tiene generalmente un forma redondeada de botón. Esta trata de imitar la estética y funcionalidad de un botón con funciones al desencadenarse un evento(hover, click, stop\_click, etc.)
+			
+			\paragraph{Text}
+			Clase de componente gráfico que incluye texto en la interfaz gráfica. Esta clase provee métodos para el manejo sencillo del texto
+			
+			\paragraph{Slider}
+			Clase de componentes gráfico compuesto con representación visual. El principal objetivo de esta clase es modelar la estética y funcionamiento normal de un \textit{Slider} encontrado en cualquier interfaz grafica, proveyendo métodos para el manejo de eventos, etc.
+			
+			\paragraph{Input}
+			Clase de componentes gráfico compuesto con representación visual. El principal objetivo de esta clase es modelar la estética y funcionamiento normal de un \textit{Input} encontrado en cualquier interfaz grafica y más comunmente en formularios, proveyendo métodos para el manejo de eventos, etc.
+			
+			\paragraph{Section}
+			Clase de componente gráfico con representación visual. Este componente funge únicamente como separadador visual de secciones, y aunque podría utilizarse como referencia para la colocación de elementos, su objetivo principal es visual y nadamás.
+			
+			\lstinputlisting[language=Python]{../Code/GraphicalComponents.py}
+		
+		\subsubsection{Graphics}
+			Módulo que integra en su definición la clase \textbf{Graphics}, la cuál bien podría tratarse como un nodo del sistema, encargándose en específico de la coordinación gráfica entre elementos gráficos, eventos y comunicación con el nodo lógico principal de la simulación. Su comportamiento definido por los métodos y atributos que maneja podría definirla como una clase \textit{Front-End} del programa de simulación.
+			
+			Así mismo conjunta una segunda clase llamada \textbf{Cell}, siendo la definición de una célula gráphica. Esta clase hereda de la clase de PyGame \textit{Sprite}, permitiendole verificar colisiones con otros \textit{Sprites}, sin embargo no solo es una definición de esta clase gráphica, pues se añaden algunos métodos más que le permiten modificar su comportamiento y valores, exponiendo sus métodos como principal interfaz para la interacción con instancias de esta clase.
+			
+			\lstinputlisting[language=Python]{../Code/Graphics.py}
+		\subsubsection{ECA}
+			\paragraph{ECA}
+				Clase que por definición de las responsabilidades, métodos y atributos que maneja, puede ser considerado uno de los Nodos principales de la simulación. Esta clase se encarga del manejo de la lógica detrás de la simulación, definiéndose en esta métodos encargados de la configuración, evolución y comunicación externa para los espacios de evolución. Evidentemente y al igual que sucede con la clase \textbf{Graphics}, tiene una relación directa de comunicación con el nodo principal gráfico para mantener la consistencia de los espacios de células lógicos y gráficos.
+				
+				Los métodos de esta clase principalmente se enfocan en la creación, configuración, reinicio y evolución del espacio de autómatas, integrando a su vez métodos auxiliares que se exponen como interfaces de comunicación con el nodo gráfico de la simulación.
+				Se cuenta también con métodos encargados de la graficación de las diferentes mediadas estadísticas de los espacios, y el guardado, alzado de espacios desde archivos CSV y el scrolling.
+			
+			\paragraph{Attractors}
+				Clase lógica que se enfoca en el cálculo completo de los atractores en un rango de potencias para la regla específica.
+				
+				Además del cálculo de los atractores, se tienen funciones para el cálculo de las cadenas que conforman el universo potencia binario y la graficación de los nodos identificados en cada evolución y que son guardados en la carpeta \textit{graphs} ya como una imagen con extensión \textit{eps}.
+			
+			\lstinputlisting[language=Python]{../Code/ECA.py}
+			
+		\subsection{main.py}
+			Archivo Python principal de la simulación, en este se maneja el cíclo principal de la aplicación gráfica, se crean e inician los flujos alternos en forma de hilos, la creación de los espacios gráficos y lógicos, constantes de configuración general del programa.
+			
+			\lstinputlisting[language=Python]{../Code/main.py}
+
+\end{document}
